@@ -76,6 +76,12 @@ réellement : deux appareils n'obtiennent donc jamais la même liste. En génér
 | Alertes (sel, réservoir d'eau, filtre…)                | binaire     | selon la famille d'appareil   |
 | Connecté                                               | binaire     | tous                          |
 
+**Porte** suit la convention Gladys des détecteurs d'ouverture : la
+fonctionnalité affiche _Fermé_ quand la porte est fermée et _Ouvert_ sinon (une
+porte verrouillée compte comme fermée). Les **alertes** affichent _Off_ tant que
+Home Connect ne les a pas déclenchées : un lave-vaisselle qui n'a jamais manqué
+de sel montre une alerte au repos, et non une valeur vide.
+
 ### Démarrer un programme
 
 **Programme en cours** démarre le programme **actuellement sélectionné sur

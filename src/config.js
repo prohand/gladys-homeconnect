@@ -23,7 +23,7 @@ export const DEFAULT_CONFIG = {
   client_id: '',
   client_secret: '',
   scope: DEFAULT_SCOPE,
-  language: 'en',
+  language: 'fr',
   // Home Connect is strict about quotas and the event stream already delivers
   // changes in real time, so polling is a safety net, not the main channel.
   poll_frequency: 900,

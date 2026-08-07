@@ -105,10 +105,19 @@ const durationSensor = {
   decode: decodeInteger,
 };
 
-/** A percentage with no dedicated Gladys category (progress, forecasts). */
+/**
+ * A percentage with no dedicated Gladys category (progress, forecasts).
+ *
+ * Gladys names a feature in its device/discovery views from the CATEGORY+TYPE
+ * pair (`deviceFeatureCategory.<category>.<type>`), and there is no translation
+ * for `unknown` + `integer`: those features showed up as nameless chips. The
+ * `unknown` category only ever translates its own `unknown` type, so that is
+ * the pair used here — the value is still an integer percentage, and read-only
+ * features are rendered by the generic sensor row whatever their type is.
+ */
 const percentSensor = {
   category: DEVICE_FEATURE_CATEGORIES.UNKNOWN,
-  type: DEVICE_FEATURE_TYPES.SENSOR.INTEGER,
+  type: DEVICE_FEATURE_TYPES.SENSOR.UNKNOWN,
   unit: DEVICE_FEATURE_UNITS.PERCENT,
   readOnly: true,
   min: 0,
@@ -336,8 +345,10 @@ export const STATUS_FEATURES = {
     id: 'door',
     name: { en: 'Door', fr: 'Porte' },
     ...binarySensor(DEVICE_FEATURE_CATEGORIES.OPENING_SENSOR),
-    // Locked is a closed door the appliance additionally bolted: still closed.
-    decode: decodeEnumBinary(DOOR_STATE.OPEN),
+    // Gladys reads an opening sensor the closed way round: 0 is "Open", 1 is
+    // "Closed". So the state that maps to 1 is CLOSED, not OPEN — and Locked is
+    // a closed door the appliance additionally bolted, still closed.
+    decode: decodeEnumBinary(DOOR_STATE.CLOSED, DOOR_STATE.LOCKED),
   },
   [STATUSES.REMOTE_CONTROL_ACTIVE]: {
     id: 'remote-control-active',
@@ -379,31 +390,36 @@ export const STATUS_FEATURES = {
     id: 'door-refrigerator',
     name: { en: 'Refrigerator door', fr: 'Porte du réfrigérateur' },
     ...binarySensor(DEVICE_FEATURE_CATEGORIES.OPENING_SENSOR),
-    decode: decodeEnumBinary(REFRIGERATION_DOOR_STATE.OPEN),
+    // Same polarity as the appliance door above: 1 is the CLOSED compartment.
+    decode: decodeEnumBinary(REFRIGERATION_DOOR_STATE.CLOSED),
   },
   [STATUSES.DOOR_FREEZER]: {
     id: 'door-freezer',
     name: { en: 'Freezer door', fr: 'Porte du congélateur' },
     ...binarySensor(DEVICE_FEATURE_CATEGORIES.OPENING_SENSOR),
-    decode: decodeEnumBinary(REFRIGERATION_DOOR_STATE.OPEN),
+    // Same polarity as the appliance door above: 1 is the CLOSED compartment.
+    decode: decodeEnumBinary(REFRIGERATION_DOOR_STATE.CLOSED),
   },
   [STATUSES.DOOR_BOTTLE_COOLER]: {
     id: 'door-bottle-cooler',
     name: { en: 'Bottle cooler door', fr: 'Porte du rafraîchisseur' },
     ...binarySensor(DEVICE_FEATURE_CATEGORIES.OPENING_SENSOR),
-    decode: decodeEnumBinary(REFRIGERATION_DOOR_STATE.OPEN),
+    // Same polarity as the appliance door above: 1 is the CLOSED compartment.
+    decode: decodeEnumBinary(REFRIGERATION_DOOR_STATE.CLOSED),
   },
   [STATUSES.DOOR_CHILLER]: {
     id: 'door-chiller',
     name: { en: 'Chiller door', fr: 'Porte du compartiment frais' },
     ...binarySensor(DEVICE_FEATURE_CATEGORIES.OPENING_SENSOR),
-    decode: decodeEnumBinary(REFRIGERATION_DOOR_STATE.OPEN),
+    // Same polarity as the appliance door above: 1 is the CLOSED compartment.
+    decode: decodeEnumBinary(REFRIGERATION_DOOR_STATE.CLOSED),
   },
   [STATUSES.DOOR_WINE_COMPARTMENT]: {
     id: 'door-wine',
     name: { en: 'Wine compartment door', fr: 'Porte de la cave à vin' },
     ...binarySensor(DEVICE_FEATURE_CATEGORIES.OPENING_SENSOR),
-    decode: decodeEnumBinary(REFRIGERATION_DOOR_STATE.OPEN),
+    // Same polarity as the appliance door above: 1 is the CLOSED compartment.
+    decode: decodeEnumBinary(REFRIGERATION_DOOR_STATE.CLOSED),
   },
   [STATUSES.COFFEE_COUNTER]: {
     id: 'counter-coffee',

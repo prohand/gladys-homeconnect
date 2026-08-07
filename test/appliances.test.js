@@ -11,6 +11,8 @@ import {
 } from '../src/appliances.js';
 import {
   DOOR_STATE,
+  EVENTS,
+  EVENT_PRESENT_STATE,
   OPERATION_STATE,
   POWER_STATE,
   SETTINGS,
@@ -101,7 +103,29 @@ test('a STATUS event updates the matching feature', async () => {
     value: DOOR_STATE.OPEN,
   });
 
-  assert.equal(lastStateOf(gladys, 'door').state, 1);
+  // Gladys opening sensors read 0 as "Open" and 1 as "Closed".
+  assert.equal(lastStateOf(gladys, 'door').state, 0);
+});
+
+test('an EVENT is remembered, so a later re-read does not clear a standing alert', async () => {
+  const { gladys, registry } = await createRegistry();
+
+  // Nothing raised yet: the feature reads cleared rather than staying empty.
+  assert.equal(lastStateOf(gladys, 'event-salt-nearly-empty').state, 0);
+
+  await registry.handleEvent({
+    haId: DISHWASHER.haId,
+    type: SSE_TYPES.EVENT,
+    key: EVENTS.SALT_NEARLY_EMPTY,
+    value: EVENT_PRESENT_STATE.PRESENT,
+  });
+  assert.equal(lastStateOf(gladys, 'event-salt-nearly-empty').state, 1);
+
+  // A full re-read of the account rebuilds the snapshot from endpoints that
+  // never mention events: the alert must survive it.
+  await registry.refresh();
+  await registry.publishSnapshotStates(DISHWASHER.haId, { force: true });
+  assert.equal(lastStateOf(gladys, 'event-salt-nearly-empty').state, 1);
 });
 
 test('an operation state event drives both the text and the program switch', async () => {

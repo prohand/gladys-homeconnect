@@ -297,6 +297,12 @@ function snapshotValues(snapshot) {
   if (snapshot.selectedProgram?.key) {
     values.set(ROOT.SELECTED_PROGRAM, snapshot.selectedProgram.key);
   }
+  // Events are not readable from any endpoint, so the registry mirrors the ones
+  // the stream delivered into the snapshot: without that, re-publishing a
+  // snapshot would reset a still-standing alert back to "cleared".
+  for (const [key, value] of Object.entries(snapshot.events ?? {})) {
+    values.set(key, value);
+  }
   return values;
 }
 
@@ -312,6 +318,13 @@ function decodeFor(model, values, snapshot) {
     return { text: '' };
   }
   if (!values.has(model.hcKey)) {
+    // An event nobody raised is not an unknown value: it is an alert that is
+    // not standing. Home Connect only ever sends the "present" edge, so a
+    // dishwasher that has never run low on salt would otherwise sit forever on
+    // "no recent value" instead of reading a plain, honest zero.
+    if (model.source === 'event') {
+      return { state: 0 };
+    }
     return undefined;
   }
   return toState(model.entry.decode(values.get(model.hcKey)));

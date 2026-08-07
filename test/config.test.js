@@ -7,7 +7,7 @@ import { PRODUCTION_BASE_URL, SIMULATOR_BASE_URL } from '../src/homeconnect/cons
 test('normalizeConfig applies the defaults on an empty config', () => {
   const config = normalizeConfig();
   assert.equal(config.poll_frequency, DEFAULT_CONFIG.poll_frequency);
-  assert.equal(config.language, 'en');
+  assert.equal(config.language, 'fr');
   assert.equal(config.base_url, PRODUCTION_BASE_URL);
 });
 
@@ -29,8 +29,9 @@ test('normalizeConfig clamps the polling interval into the manifest bounds', () 
   assert.equal(normalizeConfig({ poll_frequency: 'nonsense' }).poll_frequency, 120);
 });
 
-test('normalizeConfig falls back to English on an unknown language', () => {
-  assert.equal(normalizeConfig({ language: 'de' }).language, 'en');
+test('normalizeConfig falls back to the default language on an unknown one', () => {
+  assert.equal(normalizeConfig({ language: 'de' }).language, DEFAULT_CONFIG.language);
+  assert.equal(normalizeConfig({ language: 'en' }).language, 'en');
   assert.equal(normalizeConfig({ language: 'fr' }).language, 'fr');
 });
 
