@@ -20,7 +20,7 @@ import { createLogger, DEVICE_TRANSPORTS } from '@gladysassistant/integration-sd
 import { RateLimitedError } from './homeconnect/api.js';
 import { ReauthorizationRequiredError } from './homeconnect/oauth.js';
 import { OPERATION_STATE, ROOT, SSE_TYPES, STATUSES } from './homeconnect/constants.js';
-import { SETTING_FEATURES, SYNTHETIC_FEATURES } from './mapping/catalog.js';
+import { EVENT_FEATURES, SETTING_FEATURES, SYNTHETIC_FEATURES } from './mapping/catalog.js';
 import {
   DEVICE_TYPE,
   buildDevice,
@@ -163,6 +163,10 @@ export class ApplianceRegistry {
       constraints: knownConstraints ?? {},
       activeProgram: null,
       selectedProgram: null,
+      // Events have no endpoint: the only place they exist is the stream, so
+      // the ones already delivered are carried over from the previous snapshot
+      // instead of being dropped by every re-read.
+      events: { ...(this.appliances.get(appliance.haId)?.snapshot?.events ?? {}) },
     };
 
     if (!base.connected) {
@@ -488,6 +492,12 @@ export class ApplianceRegistry {
     }
     if (key === ROOT.SELECTED_PROGRAM) {
       snapshot.selectedProgram = value ? { key: value, options: [] } : null;
+      return;
+    }
+    if (EVENT_FEATURES[key]) {
+      // No settings/statuses entry will ever hold this one — events live in
+      // their own bag so a later re-publish keeps a standing alert standing.
+      snapshot.events = { ...(snapshot.events ?? {}), [key]: value };
       return;
     }
     for (const collection of ['settings', 'statuses']) {

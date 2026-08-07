@@ -71,6 +71,12 @@ appliances get the same list. Typically:
 | Alerts (salt low, water tank empty, filter…)    | binary      | per appliance family         |
 | Connected                                       | binary      | all                          |
 
+**Door** follows the Gladys convention for opening sensors: the feature reads
+_Closed_ when the door is shut and _Open_ when it is not — a locked door counts
+as closed. **Alerts** read _Off_ until Home Connect actually raises them, so a
+dishwasher that never ran low on salt shows a cleared alert rather than an empty
+value.
+
 ### Starting a program
 
 **Program running** starts the program **currently selected on the appliance**

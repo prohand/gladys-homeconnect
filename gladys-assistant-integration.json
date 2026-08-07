@@ -74,10 +74,10 @@
         "fr": "Langue des noms de fonctionnalités et des noms de programmes renvoyés par Home Connect."
       },
       "required": false,
-      "default": "en",
+      "default": "fr",
       "options": [
-        { "value": "en", "label": { "en": "English", "fr": "Anglais" } },
-        { "value": "fr", "label": { "en": "French", "fr": "Français" } }
+        { "value": "fr", "label": { "en": "French", "fr": "Français" } },
+        { "value": "en", "label": { "en": "English", "fr": "Anglais" } }
       ]
     },
     {

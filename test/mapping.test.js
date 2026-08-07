@@ -19,7 +19,13 @@ import {
   SETTING_FEATURES,
   mapUnit,
 } from '../src/mapping/catalog.js';
-import { OPTIONS, POWER_STATE, SETTINGS } from '../src/homeconnect/constants.js';
+import {
+  EVENTS,
+  EVENT_PRESENT_STATE,
+  OPTIONS,
+  POWER_STATE,
+  SETTINGS,
+} from '../src/homeconnect/constants.js';
 
 const config = normalizeConfig({ language: 'en' });
 
@@ -143,7 +149,8 @@ test('buildStates decodes settings, statuses and program options together', () =
   );
 
   assert.equal(byFeature.get('power').state, 1);
-  assert.equal(byFeature.get('door').state, 0);
+  // The fixture door is CLOSED, and a Gladys opening sensor reads 1 as closed.
+  assert.equal(byFeature.get('door').state, 1);
   assert.equal(byFeature.get('child-lock').state, 0);
   assert.equal(byFeature.get('remaining-time').state, 1800);
   assert.equal(byFeature.get('program-progress').state, 42);
@@ -160,8 +167,33 @@ test('buildStates leaves unreported values alone instead of publishing zero', ()
   const ids = states.map((state) => state.device_feature_external_id.split(':').pop());
 
   assert.equal(ids.includes('door'), false);
-  // Events never come from a snapshot: they only ever arrive on the stream.
-  assert.equal(ids.includes('event-program-finished'), false);
+});
+
+test('an event nobody raised is published as cleared, not left empty', () => {
+  const gladys = createFakeGladys();
+  const snapshot = dishwasherSnapshot();
+  const states = buildStates(gladys, snapshot, buildFeatureModels(snapshot));
+  const byFeature = new Map(
+    states.map((state) => [state.device_feature_external_id.split(':').pop(), state]),
+  );
+
+  // Home Connect only ever sends the "present" edge of an event, so a feature
+  // no event ever touched must read zero rather than "no recent value".
+  assert.equal(byFeature.get('event-salt-nearly-empty').state, 0);
+  assert.equal(byFeature.get('event-rinse-aid-nearly-empty').state, 0);
+});
+
+test('an event delivered by the stream survives a snapshot re-publish', () => {
+  const gladys = createFakeGladys();
+  const snapshot = dishwasherSnapshot({
+    events: { [EVENTS.SALT_NEARLY_EMPTY]: EVENT_PRESENT_STATE.PRESENT },
+  });
+  const states = buildStates(gladys, snapshot, buildFeatureModels(snapshot));
+  const salt = states.find((state) =>
+    state.device_feature_external_id.endsWith(':event-salt-nearly-empty'),
+  );
+
+  assert.equal(salt.state, 1);
 });
 
 test('an empty program publishes an empty text, not a stale one', () => {
