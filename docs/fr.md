@@ -117,6 +117,19 @@ sont absents ou vides.
 **« Cliquez sur Connecter pour lier votre compte Home Connect »** — les
 identifiants sont là, mais le flux OAuth n'a jamais été mené à son terme.
 
+**« L'intégration a refusé la connexion. Réessayez. »** dans la fenêtre de
+retour d'autorisation — l'échange du code d'autorisation a échoué. Ouvrez les
+logs de l'intégration : le message y donne la raison exacte donnée par Home
+Connect (Client Secret manquant, URL de redirection non déclarée dans le portail
+développeur, code déjà utilisé…). Si vous avez redémarré l'intégration ou la
+machine pendant que vous vous connectiez chez Home Connect, relancez simplement
+**Connecter** : une autorisation reste valable quinze minutes.
+
+Après un **Connecter** réussi, la fenêtre se ferme immédiatement et
+l'état de la connexion affiche « Compte connecté, lecture de vos appareils… » :
+la lecture du compte Home Connect se poursuit en arrière-plan et peut prendre
+quelques secondes par appareil.
+
 **« Autorisation Home Connect expirée »** — le refresh token a été refusé. Il
 expire après environ deux mois sans utilisation, et il est également révoqué si
 vous retirez Gladys des applications autorisées de votre compte Home Connect.

@@ -107,6 +107,18 @@ missing or empty.
 **"Click Connect to link your Home Connect account"** — the credentials are
 there, but the OAuth flow was never completed.
 
+**"The integration refused the connection. Try again."** in the authorization
+callback window — the authorization code exchange failed. Open the integration
+logs: the message there carries the exact reason Home Connect gave (missing
+Client Secret, redirect URI not registered in the developer portal, code already
+used…). If the integration or the machine restarted while you were signing in at
+Home Connect, simply click **Connect** again — an authorization stays valid for
+fifteen minutes.
+
+After a successful **Connect**, the window closes right away and the connection
+status reads "Account connected, reading your appliances…": the account is read
+in the background, which takes a few seconds per appliance.
+
 **"Home Connect authorization expired, click Connect again"** — the refresh
 token was refused. It expires after about two months without use, and it is also
 revoked when you remove Gladys from the authorized applications of your Home
