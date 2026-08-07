@@ -1,0 +1,254 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import { createFakeGladys, lastStateOf } from './helpers/fakeGladys.js';
+import { DISHWASHER, FRIDGE, createFakeApi } from './helpers/fixtures.js';
+import { normalizeConfig } from '../src/config.js';
+import {
+  ApplianceRegistry,
+  featureIdFromExternalId,
+  haIdFromExternalId,
+} from '../src/appliances.js';
+import {
+  DOOR_STATE,
+  OPERATION_STATE,
+  POWER_STATE,
+  SETTINGS,
+  SSE_TYPES,
+  STATUSES,
+} from '../src/homeconnect/constants.js';
+
+const config = normalizeConfig({ language: 'en' });
+
+async function createRegistry(apiOverrides = {}) {
+  const gladys = createFakeGladys();
+  const api = createFakeApi(apiOverrides);
+  const registry = new ApplianceRegistry({ gladys, api, getConfig: () => config });
+  await registry.refresh();
+  return { gladys, api, registry };
+}
+
+function deviceOf(haId) {
+  return { external_id: `ext:home-connect:appliance:${haId}` };
+}
+
+function featureOf(haId, featureId) {
+  return { external_id: `ext:home-connect:appliance:${haId}:${featureId}` };
+}
+
+test('refresh publishes every appliance of the account with its states', async () => {
+  const { gladys, registry } = await createRegistry();
+
+  assert.equal(registry.appliances.size, 2);
+  const [devices] = gladys.discovered;
+  assert.deepEqual(
+    devices.map((device) => device.external_id).sort(),
+    [
+      `ext:home-connect:appliance:${DISHWASHER.haId}`,
+      `ext:home-connect:appliance:${FRIDGE.haId}`,
+    ].sort(),
+  );
+  assert.equal(lastStateOf(gladys, 'remaining-time').state, 1800);
+  assert.equal(lastStateOf(gladys, 'operation-state').text, 'Run');
+});
+
+test('refresh reads the constraints of a setpoint exactly once', async () => {
+  const { api, registry } = await createRegistry();
+
+  const constraintCalls = () =>
+    api.calls.filter(
+      ([method, , key]) => method === 'getSettingDetail' && key === SETTINGS.FRIDGE_SETPOINT,
+    ).length;
+  assert.equal(constraintCalls(), 1);
+
+  await registry.refresh();
+  assert.equal(constraintCalls(), 1, 'constraints never change, so they are not read again');
+});
+
+test('a disconnected appliance is published as unreachable and degraded', async () => {
+  const { gladys } = await createRegistry({
+    async getAppliances() {
+      return [{ ...DISHWASHER, connected: false }];
+    },
+  });
+
+  const badge = gladys.transports.at(-1);
+  assert.equal(badge.transport, 'unreachable');
+  assert.equal(badge.degraded, true);
+});
+
+test('an appliance removed from the account stops being published', async () => {
+  let appliances = [DISHWASHER, FRIDGE];
+  const { registry } = await createRegistry({
+    async getAppliances() {
+      return appliances;
+    },
+  });
+
+  appliances = [DISHWASHER];
+  await registry.refresh();
+
+  assert.deepEqual([...registry.appliances.keys()], [DISHWASHER.haId]);
+});
+
+test('a STATUS event updates the matching feature', async () => {
+  const { gladys, registry } = await createRegistry();
+
+  await registry.handleEvent({
+    haId: DISHWASHER.haId,
+    type: SSE_TYPES.STATUS,
+    key: STATUSES.DOOR_STATE,
+    value: DOOR_STATE.OPEN,
+  });
+
+  assert.equal(lastStateOf(gladys, 'door').state, 1);
+});
+
+test('an operation state event drives both the text and the program switch', async () => {
+  const { gladys, registry } = await createRegistry();
+
+  await registry.handleEvent({
+    haId: DISHWASHER.haId,
+    type: SSE_TYPES.STATUS,
+    key: STATUSES.OPERATION_STATE,
+    value: OPERATION_STATE.PAUSE,
+  });
+
+  assert.equal(lastStateOf(gladys, 'operation-state').text, 'Pause');
+  assert.equal(lastStateOf(gladys, 'program').state, 1);
+});
+
+test('going back to Ready clears the leftover program options', async () => {
+  const { gladys, registry } = await createRegistry();
+
+  await registry.handleEvent({
+    haId: DISHWASHER.haId,
+    type: SSE_TYPES.STATUS,
+    key: STATUSES.OPERATION_STATE,
+    value: OPERATION_STATE.READY,
+  });
+
+  assert.equal(lastStateOf(gladys, 'program').state, 0);
+  assert.equal(lastStateOf(gladys, 'remaining-time').state, 0);
+  assert.equal(lastStateOf(gladys, 'program-progress').state, 0);
+});
+
+test('an EVENT frame raises then clears its binary feature', async () => {
+  const { gladys, registry } = await createRegistry();
+
+  await registry.handleEvent({
+    haId: DISHWASHER.haId,
+    type: SSE_TYPES.EVENT,
+    key: 'Dishcare.Dishwasher.Event.SaltNearlyEmpty',
+    value: 'BSH.Common.EnumType.EventPresentState.Present',
+  });
+  assert.equal(lastStateOf(gladys, 'event-salt-nearly-empty').state, 1);
+
+  await registry.handleEvent({
+    haId: DISHWASHER.haId,
+    type: SSE_TYPES.EVENT,
+    key: 'Dishcare.Dishwasher.Event.SaltNearlyEmpty',
+    value: 'BSH.Common.EnumType.EventPresentState.Off',
+  });
+  assert.equal(lastStateOf(gladys, 'event-salt-nearly-empty').state, 0);
+});
+
+test('a DISCONNECTED event flips the connected feature and the transport badge', async () => {
+  const { gladys, registry } = await createRegistry();
+
+  await registry.handleEvent({ haId: DISHWASHER.haId, type: SSE_TYPES.DISCONNECTED });
+
+  assert.equal(lastStateOf(gladys, 'connected').state, 0);
+  const badge = gladys.transports.findLast(
+    (entry) => entry.external_id === `ext:home-connect:appliance:${DISHWASHER.haId}`,
+  );
+  assert.equal(badge.transport, 'unreachable');
+});
+
+test('an event about an unknown appliance is ignored, not thrown', async () => {
+  const { registry } = await createRegistry();
+  await registry.handleEvent({ haId: 'NOPE-1', type: SSE_TYPES.STATUS, key: STATUSES.DOOR_STATE });
+});
+
+test('setValue writes the setting and echoes the value optimistically', async () => {
+  const { gladys, api, registry } = await createRegistry();
+
+  await registry.setValue(deviceOf(DISHWASHER.haId), featureOf(DISHWASHER.haId, 'power'), 0);
+
+  assert.deepEqual(
+    api.calls.findLast(([method]) => method === 'setSetting'),
+    ['setSetting', DISHWASHER.haId, SETTINGS.POWER_STATE, POWER_STATE.OFF, undefined],
+  );
+  assert.equal(lastStateOf(gladys, 'power').state, 0);
+});
+
+test('setValue passes the Home Connect unit along on a setpoint', async () => {
+  const { api, registry } = await createRegistry();
+
+  await registry.setValue(deviceOf(FRIDGE.haId), featureOf(FRIDGE.haId, 'fridge-setpoint'), 4);
+
+  assert.deepEqual(
+    api.calls.findLast(([method]) => method === 'setSetting'),
+    ['setSetting', FRIDGE.haId, SETTINGS.FRIDGE_SETPOINT, 4, '°C'],
+  );
+});
+
+test('the program switch starts and stops the selected program', async () => {
+  const { api, registry } = await createRegistry();
+
+  await registry.setValue(deviceOf(DISHWASHER.haId), featureOf(DISHWASHER.haId, 'program'), 1);
+  assert.ok(api.calls.some(([method]) => method === 'startSelectedProgram'));
+
+  await registry.setValue(deviceOf(DISHWASHER.haId), featureOf(DISHWASHER.haId, 'program'), 0);
+  assert.ok(api.calls.some(([method]) => method === 'stopProgram'));
+});
+
+test('setValue refuses a read-only feature and an offline appliance', async () => {
+  const { registry } = await createRegistry();
+
+  await assert.rejects(
+    () => registry.setValue(deviceOf(DISHWASHER.haId), featureOf(DISHWASHER.haId, 'door'), 1),
+    /read-only/,
+  );
+  await assert.rejects(
+    () => registry.setValue(deviceOf(DISHWASHER.haId), featureOf(DISHWASHER.haId, 'nope'), 1),
+    /Unknown Home Connect feature/,
+  );
+
+  registry.appliances.get(DISHWASHER.haId).snapshot.connected = false;
+  await assert.rejects(
+    () => registry.setValue(deviceOf(DISHWASHER.haId), featureOf(DISHWASHER.haId, 'power'), 1),
+    /offline/,
+  );
+});
+
+test('polling one device only reads that appliance', async () => {
+  const { api, registry } = await createRegistry();
+  api.calls.length = 0;
+
+  await registry.poll(deviceOf(FRIDGE.haId));
+
+  assert.equal(
+    api.calls.filter(([method]) => method === 'getAppliances').length,
+    0,
+    'the whole account is not re-read to poll one device',
+  );
+  assert.ok(api.calls.some(([method, haId]) => method === 'getAppliance' && haId === FRIDGE.haId));
+});
+
+test('polling an appliance we never saw falls back to a full refresh', async () => {
+  const { api, registry } = await createRegistry();
+  registry.appliances.clear();
+  api.calls.length = 0;
+
+  await registry.poll(deviceOf(FRIDGE.haId));
+
+  assert.ok(api.calls.some(([method]) => method === 'getAppliances'));
+  assert.equal(registry.appliances.size, 2);
+});
+
+test('external ids round-trip back to the haId and the feature suffix', () => {
+  const device = `ext:home-connect:appliance:${DISHWASHER.haId}`;
+  assert.equal(haIdFromExternalId(device), DISHWASHER.haId);
+  assert.equal(featureIdFromExternalId(device, `${device}:fridge-setpoint`), 'fridge-setpoint');
+});

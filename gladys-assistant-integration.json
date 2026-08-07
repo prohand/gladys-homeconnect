@@ -1,0 +1,134 @@
+{
+  "manifest_version": 1,
+  "type": "device",
+  "name": "Home Connect",
+  "description": {
+    "en": "Monitor and control your Bosch, Siemens, Neff and Gaggenau appliances via Home Connect.",
+    "fr": "Pilotez et suivez vos appareils Bosch, Siemens, Neff et Gaggenau via Home Connect."
+  },
+  "version": "1.0.0",
+  "docker_image": "ghcr.io/prohand/gladys-homeconnect:1.0.0",
+  "gladys_version": ">=4.85.0",
+  "cover_image": "https://raw.githubusercontent.com/prohand/gladys-homeconnect/main/cover.png",
+  "transports": ["cloud"],
+  "config_schema": [
+    {
+      "key": "intro",
+      "type": "section",
+      "label": { "en": "Before you start", "fr": "Avant de commencer" },
+      "description": {
+        "en": "Home Connect has no local API: everything goes through the BSH cloud. Create a free developer account, register an application of type \"Home Connect Application\" with the Authorization Code Grant Flow, and paste its Client ID and Client Secret below. The redirect URI to register is shown by the \"Test the connection\" action once you start the connection.",
+        "fr": "Home Connect n'a pas d'API locale : tout passe par le cloud BSH. Créez un compte développeur gratuit, enregistrez une application de type « Home Connect Application » avec le flux Authorization Code Grant, puis collez ses Client ID et Client Secret ci-dessous. L'URL de redirection à déclarer est affichée par l'action « Tester la connexion » une fois la connexion lancée."
+      },
+      "links": [
+        {
+          "url": "https://developer.home-connect.com/",
+          "label": {
+            "en": "Home Connect developer portal",
+            "fr": "Portail développeur Home Connect"
+          }
+        },
+        {
+          "url": "https://developer.home-connect.com/application/add",
+          "label": { "en": "Register an application", "fr": "Enregistrer une application" }
+        }
+      ]
+    },
+    {
+      "key": "client_id",
+      "type": "string",
+      "label": { "en": "Client ID", "fr": "Client ID" },
+      "description": {
+        "en": "Client ID of your Home Connect application.",
+        "fr": "Client ID de votre application Home Connect."
+      },
+      "required": true,
+      "placeholder": { "en": "1A2B3C…", "fr": "1A2B3C…" }
+    },
+    {
+      "key": "client_secret",
+      "type": "secret",
+      "label": { "en": "Client Secret", "fr": "Client Secret" },
+      "description": {
+        "en": "Client Secret of your Home Connect application. Leave empty only if you registered a public client without a secret.",
+        "fr": "Client Secret de votre application Home Connect. Laissez vide uniquement si vous avez enregistré un client public sans secret."
+      },
+      "required": false
+    },
+    {
+      "key": "account",
+      "type": "oauth2",
+      "label": { "en": "Home Connect account", "fr": "Compte Home Connect" },
+      "description": {
+        "en": "Sign in with the Home Connect account your appliances are paired with, then allow Gladys.",
+        "fr": "Connectez-vous avec le compte Home Connect auquel vos appareils sont associés, puis autorisez Gladys."
+      },
+      "required": true
+    },
+    {
+      "key": "language",
+      "type": "select",
+      "label": { "en": "Language", "fr": "Langue" },
+      "description": {
+        "en": "Language of the device feature names and of the program names returned by Home Connect.",
+        "fr": "Langue des noms de fonctionnalités et des noms de programmes renvoyés par Home Connect."
+      },
+      "required": false,
+      "default": "en",
+      "options": [
+        { "value": "en", "label": { "en": "English", "fr": "Anglais" } },
+        { "value": "fr", "label": { "en": "French", "fr": "Français" } }
+      ]
+    },
+    {
+      "key": "poll_frequency",
+      "type": "number",
+      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "description": {
+        "en": "Safety net behind the real-time event stream. Home Connect enforces a daily request quota, so keep it high unless you have a reason not to.",
+        "fr": "Filet de sécurité derrière le flux d'événements temps réel. Home Connect impose un quota de requêtes quotidien : gardez une valeur élevée sauf raison particulière."
+      },
+      "required": false,
+      "default": 900,
+      "min": 120,
+      "max": 3600
+    },
+    {
+      "key": "scope",
+      "type": "string",
+      "label": { "en": "OAuth scopes", "fr": "Scopes OAuth" },
+      "description": {
+        "en": "Space-separated Home Connect scopes requested during authorization. Narrow it down if your developer application was registered with fewer permissions.",
+        "fr": "Scopes Home Connect demandés lors de l'autorisation, séparés par des espaces. Réduisez-les si votre application développeur a été enregistrée avec moins de permissions."
+      },
+      "required": false,
+      "default": "IdentifyAppliance Monitor Settings Control"
+    },
+    {
+      "key": "use_simulator",
+      "type": "boolean",
+      "label": {
+        "en": "Use the Home Connect simulator",
+        "fr": "Utiliser le simulateur Home Connect"
+      },
+      "description": {
+        "en": "Talk to simulator.home-connect.com instead of the production API, to test without real appliances.",
+        "fr": "Utiliser simulator.home-connect.com au lieu de l'API de production, pour tester sans appareil réel."
+      },
+      "required": false,
+      "default": false
+    }
+  ],
+  "actions": [
+    {
+      "key": "test_connection",
+      "label": { "en": "Test the connection", "fr": "Tester la connexion" },
+      "timeout_seconds": 30
+    },
+    {
+      "key": "refresh_devices",
+      "label": { "en": "Refresh the appliances", "fr": "Actualiser les appareils" },
+      "timeout_seconds": 60
+    }
+  ]
+}
