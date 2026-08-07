@@ -18,6 +18,19 @@
 import { OAUTH_AUTHORIZE_PATH, OAUTH_TOKEN_PATH } from './constants.js';
 
 /**
+ * Budget of the authorization-code exchange, deliberately short.
+ *
+ * Gladys waits at most 5 s for the acknowledgement of the `oauth-callback`
+ * command before declaring the integration unreachable — and the browser then
+ * shows "the integration refused the connection" whatever we answer afterwards.
+ * Overrunning that budget is therefore never useful: better to fail with our own
+ * message, in time for the user to read it, than to answer into a closed door.
+ * The refresh path keeps the generous `request_timeout_ms`: it runs in the
+ * background, with nobody waiting behind a 5 s door.
+ */
+export const AUTHORIZATION_EXCHANGE_TIMEOUT_MS = 3_500;
+
+/**
  * Error thrown when the refresh token itself is refused: the user must click
  * "Connect" again. Callers surface it through `setConnectionStatus(false, …)`
  * instead of retrying forever.
@@ -58,13 +71,17 @@ export function buildAuthorizeUrl(config, redirectUri, state) {
  * @returns {Promise<{ access_token: string, refresh_token: string, token_expires_at: number }>}
  */
 export function exchangeCode(config, { code, redirectUri }) {
-  return requestToken(config, {
-    grant_type: 'authorization_code',
-    client_id: config.client_id,
-    client_secret: config.client_secret,
-    redirect_uri: redirectUri,
-    code,
-  });
+  return requestToken(
+    config,
+    {
+      grant_type: 'authorization_code',
+      client_id: config.client_id,
+      client_secret: config.client_secret,
+      redirect_uri: redirectUri,
+      code,
+    },
+    AUTHORIZATION_EXCHANGE_TIMEOUT_MS,
+  );
 }
 
 /**
@@ -88,8 +105,9 @@ export function refreshTokens(config, refreshToken) {
  * POST the token endpoint with a form body, as the OAuth2 spec requires.
  * @param {object} config
  * @param {Record<string, string|undefined>} params
+ * @param {number} [timeoutMs] budget of the call, `request_timeout_ms` by default
  */
-async function requestToken(config, params) {
+async function requestToken(config, params, timeoutMs = config.request_timeout_ms) {
   const body = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     // A public client registered without a secret sends no client_secret at
@@ -106,13 +124,18 @@ async function requestToken(config, params) {
       Accept: 'application/json',
     },
     body,
-    signal: AbortSignal.timeout(config.request_timeout_ms),
+    signal: AbortSignal.timeout(timeoutMs),
   });
 
   const payload = await readJson(response);
 
   if (!response.ok) {
-    const detail = payload?.error_description || payload?.error || `HTTP ${response.status}`;
+    const detail = [
+      payload?.error_description || payload?.error || `HTTP ${response.status}`,
+      hintFor(config, params, payload),
+    ]
+      .filter(Boolean)
+      .join(' — ');
     // `invalid_grant` is the terminal one: the refresh token is dead (revoked
     // in the Home Connect app, expired after two months of downtime, or
     // already rotated). Retrying cannot fix it — only the user can.
@@ -132,6 +155,24 @@ async function requestToken(config, params) {
     refresh_token: payload.refresh_token ?? params.refresh_token ?? null,
     token_expires_at: expiresAtFrom(payload.expires_in),
   };
+}
+
+/**
+ * The two refusals Home Connect words unhelpfully, expanded into what the user
+ * actually has to change. Everything else is left to speak for itself.
+ * @param {object} config
+ * @param {Record<string, string|undefined>} params
+ * @param {object|null} payload
+ * @returns {string} an empty string when we have nothing to add
+ */
+function hintFor(config, params, payload) {
+  if (!config.client_secret && !config.use_simulator) {
+    return 'the production API requires a Client Secret, fill it in the configuration';
+  }
+  if (payload?.error === 'invalid_grant' && params.grant_type === 'authorization_code') {
+    return `check that ${params.redirect_uri} is registered as the redirect URI of your Home Connect application`;
+  }
+  return '';
 }
 
 /**

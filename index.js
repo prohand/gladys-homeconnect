@@ -14,7 +14,6 @@
 // The SDK reads them itself: `new GladysIntegration()` is enough.
 // -----------------------------------------------------------------------------
 
-import { randomUUID } from 'node:crypto';
 import { GladysIntegration, logger } from '@gladysassistant/integration-sdk';
 import { hasCredentials, normalizeConfig, readTokens } from './src/config.js';
 import { HomeConnectApi, RateLimitedError } from './src/homeconnect/api.js';
@@ -25,6 +24,12 @@ import {
 } from './src/homeconnect/oauth.js';
 import { startEventStream } from './src/homeconnect/events.js';
 import { ApplianceRegistry } from './src/appliances.js';
+import {
+  createPendingState,
+  matchesPendingState,
+  pendingStateConfig,
+  readPendingState,
+} from './src/oauth-session.js';
 
 const gladys = new GladysIntegration();
 
@@ -34,8 +39,10 @@ let rawConfig = {};
 let config = normalizeConfig();
 let tokens = readTokens();
 
-// Anti-CSRF state of the authorization in flight, verified in the callback.
-let pendingOAuthState = null;
+// Anti-CSRF state of the authorization in flight, verified in the callback. Also
+// mirrored into the config (see src/oauth-session.js): the two steps of the flow
+// are minutes apart, this process may not be the same one at the end of it.
+let pendingOAuth = null;
 
 // Stop function of the Server-Sent-Events stream, while one is running.
 let stopEventStream = null;
@@ -72,34 +79,67 @@ gladys.onPoll(async (device) => {
 });
 
 // --- OAuth2: Gladys relays the browser flow, we own the provider side --------
+//
+// Both handlers are acknowledged commands, and Gladys gives a command 5 seconds
+// before declaring the integration unreachable — which the browser reports as
+// "the integration refused the connection". So they do the strict minimum on the
+// critical path and hand everything else to the background: reading the whole
+// Home Connect account takes far longer than that, and doing it here used to
+// fail the connection the token exchange had just succeeded in making.
 gladys.onOAuthAuthorizeUrl(async (key, redirectUri) => {
   logger.info(`Building the Home Connect authorization URL (${key})`);
   if (!hasCredentials(config)) {
     throw new Error('Fill in your Home Connect Client ID before connecting your account');
   }
-  pendingOAuthState = randomUUID();
-  // Remember the redirect URI: it is the one value the user must register in
-  // the Home Connect developer portal, and the "Test the connection" action
-  // shows it back to them instead of making them guess.
-  await persistRawConfig({ oauth_redirect_uri: redirectUri });
-  return buildAuthorizeUrl(config, redirectUri, pendingOAuthState);
+  pendingOAuth = createPendingState();
+  // Off the critical path: the URL is built from what we already hold, and the
+  // browser must not wait on a config write to open the provider page.
+  persistRawConfig({
+    // The redirect URI is the one value the user must register in the Home
+    // Connect developer portal, and the "Test the connection" action shows it
+    // back to them instead of making them guess.
+    oauth_redirect_uri: redirectUri,
+    ...pendingStateConfig(pendingOAuth),
+  }).catch((err) => logger.error('Failed to store the pending authorization', err));
+  return buildAuthorizeUrl(config, redirectUri, pendingOAuth.state);
 });
 
 gladys.onOAuthCallback(async (key, { code, state, redirectUri }) => {
   logger.info(`Home Connect authorization callback received (${key})`);
-  if (!pendingOAuthState || state !== pendingOAuthState) {
-    throw new Error('OAuth state mismatch, restart the connection from Gladys');
-  }
-  pendingOAuthState = null;
+  await assertExpectedState(state);
 
   const newTokens = await exchangeCode(config, { code, redirectUri });
   tokens = readTokens(newTokens);
-  rawConfig = { ...rawConfig, ...newTokens };
-  await gladys.setConfig(newTokens);
+  rawConfig = { ...rawConfig, ...newTokens, ...pendingStateConfig(null) };
+  await gladys.setConfig({ ...newTokens, ...pendingStateConfig(null) });
+  pendingOAuth = null;
 
   logger.info('Home Connect account connected');
-  await initialize();
+  // Acknowledge now: publishing the appliances is a dozen Home Connect calls
+  // per appliance, well past the 5 s budget, and the user watches its result in
+  // the Configuration screen, not in the callback window.
+  scheduleInitialize();
 });
+
+/**
+ * Verify the state Home Connect handed back, falling back to the copy stored in
+ * the config when this process did not issue it — the container may well have
+ * been restarted while the user was signing in.
+ * @param {unknown} returnedState
+ */
+async function assertExpectedState(returnedState) {
+  if (matchesPendingState(pendingOAuth, returnedState)) {
+    return;
+  }
+  logger.info('Unknown authorization state in memory, re-reading the stored one');
+  rawConfig = (await gladys.getConfig()) ?? {};
+  config = normalizeConfig(rawConfig);
+  tokens = readTokens(rawConfig);
+  pendingOAuth = readPendingState(rawConfig);
+  if (!matchesPendingState(pendingOAuth, returnedState)) {
+    throw new Error('Authorization state mismatch or expired, restart the connection from Gladys');
+  }
+}
 
 // --- Manifest actions: buttons in the Configuration screen -------------------
 gladys.onAction('test_connection', async () => {
@@ -209,6 +249,30 @@ async function initialize() {
     }
     throw err;
   }
+}
+
+/**
+ * Run `initialize()` outside of the current command, and never let it reject
+ * into the void: a failure there is exactly what the Configuration screen is
+ * meant to show.
+ */
+function scheduleInitialize() {
+  setTimeout(async () => {
+    // The account read below is the slow part; say so right away, so the
+    // Configuration screen stops showing "click Connect" the moment the
+    // authorization actually succeeded.
+    await reportStatus(false, {
+      en: 'Account connected, reading your appliances…',
+      fr: 'Compte connecté, lecture de vos appareils…',
+    });
+    initialize().catch(async (err) => {
+      logger.error('Initialization failed', err);
+      await reportStatus(false, {
+        en: 'Connected, but reading the account failed. Check the integration logs.',
+        fr: "Connexion établie, mais la lecture du compte a échoué. Consultez les logs de l'intégration.",
+      });
+    });
+  }, 0);
 }
 
 function startStream() {
