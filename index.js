@@ -72,6 +72,29 @@ gladys.onSetValue(async (device, feature, value) => {
   await registry.setValue(device, feature, value);
 });
 
+// --- Device lifecycle: the user adds a discovered appliance ------------------
+//
+// A device does not exist in Gladys before the user creates it from the
+// Discovery screen, and the states published while reading the account had no
+// feature to land on. Republish them here, otherwise the brand-new device stays
+// empty until the appliance happens to change something on its own.
+gladys.onDeviceCreated(async (device) => {
+  logger.info(`onDeviceCreated <- ${device.external_id}`);
+  await registry.handleDeviceCreated(device);
+});
+
+// Same on an update: the user may have accepted a feature change, and the new
+// features are as empty as a new device.
+gladys.onDeviceUpdated(async (device) => {
+  logger.info(`onDeviceUpdated <- ${device.external_id}`);
+  await registry.handleDeviceCreated(device);
+});
+
+gladys.onDeviceDeleted(async (device) => {
+  logger.info(`onDeviceDeleted <- ${device.external_id}`);
+  registry.handleDeviceDeleted(device);
+});
+
 // --- Polling: the safety net behind the event stream -------------------------
 gladys.onPoll(async (device) => {
   logger.debug(`onPoll <- ${device.external_id}`);
@@ -277,6 +300,9 @@ function scheduleInitialize() {
 
 function startStream() {
   stopStream();
+  // The first connection follows the full read `initialize()` just did; only the
+  // ones after it can have left a gap in what we know.
+  let everConnected = false;
   stopEventStream = startEventStream({
     api,
     getConfig: () => config,
@@ -286,7 +312,16 @@ function startStream() {
         .catch((err) => logger.error(`Failed to apply an event of ${event.haId}`, err));
     },
     onStatusChange: (connected, err) => {
-      if (!connected && err instanceof ReauthorizationRequiredError) {
+      if (connected) {
+        if (everConnected) {
+          registry
+            .refreshAfterStreamGap()
+            .catch((error) => logger.error('Re-read after the stream gap failed', error));
+        }
+        everConnected = true;
+        return;
+      }
+      if (err instanceof ReauthorizationRequiredError) {
         reportStatus(false, {
           en: 'Home Connect authorization expired, click Connect again.',
           fr: 'Autorisation Home Connect expirée, cliquez de nouveau sur Connecter.',
