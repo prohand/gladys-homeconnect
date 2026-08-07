@@ -55,6 +55,15 @@ export class ApplianceRegistry {
     this.rediscoveryTimer = null;
     /** @type {Map<string, number>} last effective poll per haId, for the throttle */
     this.lastPollAt = new Map();
+    /** @type {Map<string, string>} last state published per feature external_id */
+    this.publishedStates = new Map();
+    /**
+     * haIds whose whole snapshot has been published while the Gladys device was
+     * known to exist. States published before the user creates the device land
+     * nowhere: Gladys has no feature to attach them to yet.
+     * @type {Set<string>}
+     */
+    this.fullyPublished = new Set();
   }
 
   /** Every appliance as a Gladys discovery payload (used by onScanRequest). */
@@ -93,6 +102,7 @@ export class ApplianceRegistry {
         logger.info(`Appliance ${haId} is gone from the account`);
         this.appliances.delete(haId);
         this.lastPollAt.delete(haId);
+        this.forget(haId);
       }
     }
 
@@ -257,18 +267,80 @@ export class ApplianceRegistry {
     }
   }
 
-  /** Publish every state readable from the stored snapshot of one appliance. */
-  async publishSnapshotStates(haId) {
+  /**
+   * Publish every state readable from the stored snapshot of one appliance.
+   *
+   * @param {string} haId
+   * @param {object} [options]
+   * @param {boolean} [options.force] publish every value, even the unchanged
+   *   ones — used the first time we know the Gladys device exists, because the
+   *   states published before its creation went nowhere.
+   */
+  async publishSnapshotStates(haId, { force = false } = {}) {
     const appliance = this.appliances.get(haId);
     if (!appliance) {
       return;
     }
     const states = buildStates(this.gladys, appliance.snapshot, appliance.models);
-    if (states.length > 0) {
-      // publishStates batches up to 100 states per request; an appliance never
-      // gets close, so one call per appliance is enough.
-      await this.gladys.publishStates(states);
+    await this.pushStates(states, { force });
+    if (force) {
+      this.fullyPublished.add(haId);
     }
+  }
+
+  /**
+   * Publish a batch of states, skipping the ones already published with the
+   * same value.
+   *
+   * The poll ticks every minute while a Home Connect appliance changes a couple
+   * of times a day: without this filter every feature would get an identical
+   * state every minute, for nothing but a fatter history. `force` bypasses it
+   * for the one case where "already published" says nothing about what Gladys
+   * actually holds — the device was created after the value was sent.
+   *
+   * @param {Array<{device_feature_external_id: string, state?: number, text?: string}>} states
+   * @param {object} [options]
+   * @param {boolean} [options.force]
+   */
+  async pushStates(states, { force = false } = {}) {
+    const fresh = force
+      ? states
+      : states.filter(
+          (state) => this.publishedStates.get(state.device_feature_external_id) !== stateKey(state),
+        );
+    if (fresh.length === 0) {
+      return;
+    }
+    // publishStates batches up to 100 states per request; an appliance never
+    // gets close, so one call per appliance is enough.
+    await this.gladys.publishStates(fresh);
+    // Only after the publish succeeded: a failed batch must be sent again.
+    for (const state of fresh) {
+      this.publishedStates.set(state.device_feature_external_id, stateKey(state));
+    }
+  }
+
+  /**
+   * The user just created (or updated) one of the discovered devices.
+   *
+   * This is what fills a brand-new device in: discovery publishes the values
+   * right after reading the account, but at that point the device does not
+   * exist in Gladys yet and its states are dropped. Nothing else would republish
+   * them until the appliance changed on its own.
+   *
+   * @param {object} device the Gladys device
+   */
+  async handleDeviceCreated(device) {
+    const haId = haIdFromExternalId(device?.external_id ?? '');
+    if (!this.appliances.has(haId)) {
+      // Fresh container, or a device created from a discovery this process
+      // never ran: read the account rather than publish nothing.
+      logger.info(`Device created for an appliance we have not read yet (${haId}), refreshing`);
+      await this.refresh();
+    }
+    logger.info(`Publishing the current values of ${haId} for the newly created device`);
+    await this.publishTransports();
+    await this.publishSnapshotStates(haId, { force: true });
   }
 
   // --- Polling ---------------------------------------------------------------
@@ -288,8 +360,16 @@ export class ApplianceRegistry {
    */
   async poll(device) {
     const haId = haIdFromExternalId(device.external_id);
+    // Gladys only polls the devices the user actually created, so being polled
+    // at all is the proof that this one exists on the other side — and the last
+    // chance to fill it in if the device-created event was missed.
+    const force = !this.fullyPublished.has(haId);
+
     if (!this.isPollDue(haId)) {
-      logger.debug(`Skipping the poll of ${haId}, the configured interval has not elapsed`);
+      logger.debug(`Skipping the remote read of ${haId}, the configured interval has not elapsed`);
+      // Costs no Home Connect call: re-stating what the snapshot already holds
+      // is free, and it is what a device created between two reads needs.
+      await this.publishSnapshotStates(haId, { force });
       return;
     }
 
@@ -297,9 +377,13 @@ export class ApplianceRegistry {
     if (!known) {
       // The user created the device from a previous discovery and the appliance
       // is not in our map yet (fresh container, refresh still failing): pull the
-      // whole account rather than guess.
+      // whole account rather than guess. The clock is started either way, so an
+      // appliance gone from the account does not cost a full account read on
+      // every tick.
+      this.lastPollAt.set(haId, Date.now());
       logger.info(`Polled an unknown appliance (${haId}), refreshing the account`);
       await this.refresh();
+      await this.publishSnapshotStates(haId, { force });
       return;
     }
     // One call for the envelope (name, connected flag), not the whole account:
@@ -307,7 +391,7 @@ export class ApplianceRegistry {
     const envelope = await this.api.getAppliance(haId);
     await this.refreshAppliance({ ...envelope, haId });
     await this.publishTransports();
-    await this.publishSnapshotStates(haId);
+    await this.publishSnapshotStates(haId, { force });
   }
 
   /**
@@ -386,9 +470,7 @@ export class ApplianceRegistry {
       }
     }
 
-    if (states.length > 0) {
-      await this.gladys.publishStates(states);
-    }
+    await this.pushStates(states);
 
     // A finished or aborted program leaves its options behind: Home Connect
     // stops sending them but never sends a zero, so the "remaining time" would
@@ -429,9 +511,27 @@ export class ApplianceRegistry {
         device_feature_external_id: this.featureExternalId(haId, model.featureId),
         state: 0,
       }));
-    if (states.length > 0) {
-      await this.gladys.publishStates(states);
+    await this.pushStates(states);
+  }
+
+  /**
+   * The event stream just came back. Anything that changed while it was down
+   * was never delivered, so the snapshots may be stale.
+   *
+   * Home Connect closes the stream on its own about once a day and the
+   * reconnection is immediate, so this must not turn every cycle into a full
+   * account read: the appliances read within the configured interval are
+   * considered fresh enough — that interval is exactly the "how stale may a
+   * value be" knob the user set.
+   */
+  async refreshAfterStreamGap() {
+    const stale = [...this.appliances.keys()].some((haId) => this.isPollDue(haId));
+    if (this.appliances.size > 0 && !stale) {
+      logger.debug('Event stream back, the appliances were read recently enough');
+      return;
     }
+    logger.info('Event stream back after a gap, re-reading the appliances');
+    await this.refresh();
   }
 
   /** Debounced full re-discovery, for the events that change the appliance list. */
@@ -516,15 +616,45 @@ export class ApplianceRegistry {
 
   // --- Helpers ---------------------------------------------------------------
 
+  /**
+   * The user deleted the device. The appliance stays in the account (and on the
+   * Discovery screen), we simply stop assuming anything about what Gladys holds
+   * for it: recreating it must republish everything.
+   * @param {object} device
+   */
+  handleDeviceDeleted(device) {
+    this.forget(haIdFromExternalId(device?.external_id ?? ''));
+  }
+
+  /**
+   * Drop what we remember having published about an appliance, so it is
+   * republished in full if it ever comes back.
+   * @param {string} haId
+   */
+  forget(haId) {
+    this.fullyPublished.delete(haId);
+    const prefix = `${this.gladys.externalIds(DEVICE_TYPE, haId).device}:`;
+    for (const key of this.publishedStates.keys()) {
+      if (key.startsWith(prefix)) {
+        this.publishedStates.delete(key);
+      }
+    }
+  }
+
   featureExternalId(haId, featureId) {
     return this.gladys.externalIds(DEVICE_TYPE, haId).feature(featureId);
   }
 
   publishFeature(haId, featureId, state) {
-    return this.gladys.publishStates([
+    return this.pushStates([
       { device_feature_external_id: this.featureExternalId(haId, featureId), ...state },
     ]);
   }
+}
+
+/** Identity of a published state, for the "same value again" comparison. */
+function stateKey(state) {
+  return state.text === undefined ? `n:${state.state}` : `t:${state.text}`;
 }
 
 /**

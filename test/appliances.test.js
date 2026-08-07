@@ -273,6 +273,117 @@ test('polling honours the configured interval instead of the Gladys tick', async
   );
 });
 
+test('creating the device republishes every value of the appliance', async () => {
+  // The states sent while reading the account landed nowhere: the device did
+  // not exist in Gladys yet. This is what fills a first-login device in.
+  const { gladys, api, registry } = await createRegistry();
+  gladys.published.length = 0;
+  api.calls.length = 0;
+
+  await registry.handleDeviceCreated(deviceOf(DISHWASHER.haId));
+
+  assert.equal(lastStateOf(gladys, 'remaining-time').state, 1800);
+  assert.equal(lastStateOf(gladys, 'operation-state').text, 'Run');
+  assert.equal(lastStateOf(gladys, 'power').state, 1);
+  assert.equal(api.calls.length, 0, 'the snapshot is enough, no Home Connect call is needed');
+});
+
+test('creating a device for an appliance we never read pulls the account first', async () => {
+  const { gladys, api, registry } = await createRegistry();
+  registry.appliances.clear();
+  gladys.published.length = 0;
+  api.calls.length = 0;
+
+  await registry.handleDeviceCreated(deviceOf(FRIDGE.haId));
+
+  assert.ok(api.calls.some(([method]) => method === 'getAppliances'));
+  assert.equal(lastStateOf(gladys, 'fridge-setpoint').state, 6);
+});
+
+test('a tick inside the interval still fills a device created since the last read', async () => {
+  const { gladys, api, registry } = await createRegistry();
+  gladys.published.length = 0;
+  api.calls.length = 0;
+
+  // The discovery read just happened, so no Home Connect call is due — but the
+  // device the user created in the meantime has to get its values.
+  await registry.poll(deviceOf(FRIDGE.haId));
+
+  assert.equal(api.calls.length, 0, 'a tick inside the interval must not call Home Connect');
+  assert.equal(lastStateOf(gladys, 'fridge-setpoint').state, 6);
+});
+
+test('unchanged values are not republished tick after tick', async () => {
+  const { gladys, registry } = await createRegistry();
+  await registry.poll(deviceOf(FRIDGE.haId));
+  gladys.published.length = 0;
+
+  await registry.poll(deviceOf(FRIDGE.haId));
+  assert.equal(gladys.published.length, 0, 'nothing changed, nothing is published');
+
+  registry.appliances.get(FRIDGE.haId).snapshot.settings[0].value = 4;
+  await registry.poll(deviceOf(FRIDGE.haId));
+  assert.equal(lastStateOf(gladys, 'fridge-setpoint').state, 4, 'a change is published');
+});
+
+test('deleting the device makes a later recreation publish everything again', async () => {
+  const { gladys, registry } = await createRegistry();
+  await registry.poll(deviceOf(FRIDGE.haId));
+
+  registry.handleDeviceDeleted(deviceOf(FRIDGE.haId));
+  gladys.published.length = 0;
+  await registry.handleDeviceCreated(deviceOf(FRIDGE.haId));
+
+  assert.equal(lastStateOf(gladys, 'fridge-setpoint').state, 6);
+});
+
+test('polling an appliance gone from the account does not re-read it every tick', async () => {
+  let appliances = [DISHWASHER, FRIDGE];
+  const accountCalls = [];
+  const { api, registry } = await createRegistry({
+    async getAppliances() {
+      accountCalls.push(['getAppliances']);
+      return appliances;
+    },
+  });
+
+  appliances = [DISHWASHER];
+  await registry.refresh();
+  accountCalls.length = 0;
+  api.calls.length = 0;
+
+  // The device the user created survives the appliance leaving the account, and
+  // Gladys keeps polling it: the fallback refresh must stay on the interval.
+  await registry.poll(deviceOf(FRIDGE.haId));
+  assert.equal(accountCalls.length, 1, 'the first tick falls back to a full account read');
+
+  await registry.poll(deviceOf(FRIDGE.haId));
+  assert.equal(
+    accountCalls.length,
+    1,
+    'the second tick is inside the interval and must not re-read the account',
+  );
+});
+
+test('a stream reconnection re-reads the account only once the values are stale', async () => {
+  const { api, registry } = await createRegistry();
+  api.calls.length = 0;
+
+  // The daily clean cycle of the stream reconnects right away: nothing to re-read.
+  await registry.refreshAfterStreamGap();
+  assert.equal(api.calls.filter(([method]) => method === 'getAppliances').length, 0);
+
+  for (const haId of registry.appliances.keys()) {
+    registry.lastPollAt.set(haId, Date.now() - config.poll_frequency * 1000);
+  }
+  await registry.refreshAfterStreamGap();
+  assert.equal(
+    api.calls.filter(([method]) => method === 'getAppliances').length,
+    1,
+    'a real gap re-reads the account',
+  );
+});
+
 test('external ids round-trip back to the haId and the feature suffix', () => {
   const device = `ext:home-connect:appliance:${DISHWASHER.haId}`;
   assert.equal(haIdFromExternalId(device), DISHWASHER.haId);

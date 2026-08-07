@@ -80,11 +80,11 @@ export function createFakeApi(overrides = {}) {
     },
     async getSettings(haId) {
       calls.push(['getSettings', haId]);
-      return haId === DISHWASHER.haId ? DISHWASHER_SETTINGS : FRIDGE_SETTINGS;
+      return copy(haId === DISHWASHER.haId ? DISHWASHER_SETTINGS : FRIDGE_SETTINGS);
     },
     async getStatuses(haId) {
       calls.push(['getStatuses', haId]);
-      return haId === DISHWASHER.haId ? DISHWASHER_STATUSES : FRIDGE_STATUSES;
+      return copy(haId === DISHWASHER.haId ? DISHWASHER_STATUSES : FRIDGE_STATUSES);
     },
     async getSettingDetail(haId, key) {
       calls.push(['getSettingDetail', haId, key]);
@@ -105,11 +105,11 @@ export function createFakeApi(overrides = {}) {
     },
     async getActiveProgram(haId) {
       calls.push(['getActiveProgram', haId]);
-      return haId === DISHWASHER.haId ? DISHWASHER_ACTIVE_PROGRAM : null;
+      return haId === DISHWASHER.haId ? copy(DISHWASHER_ACTIVE_PROGRAM) : null;
     },
     async getSelectedProgram(haId) {
       calls.push(['getSelectedProgram', haId]);
-      return haId === DISHWASHER.haId ? DISHWASHER_ACTIVE_PROGRAM : null;
+      return haId === DISHWASHER.haId ? copy(DISHWASHER_ACTIVE_PROGRAM) : null;
     },
     async setSetting(haId, key, value, unit) {
       calls.push(['setSetting', haId, key, value, unit]);
@@ -123,4 +123,13 @@ export function createFakeApi(overrides = {}) {
     ...overrides,
   };
   return api;
+}
+
+/**
+ * The registry writes into the snapshot it is given (an event updates a value
+ * in place), so every call hands out its own copy — otherwise one test would
+ * change what the next one reads.
+ */
+function copy(value) {
+  return structuredClone(value);
 }
