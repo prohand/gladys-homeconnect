@@ -26,6 +26,7 @@ import {
   mapUnit,
 } from './catalog.js';
 import { ROOT, STATUSES } from '../homeconnect/constants.js';
+import { GLADYS_POLL_TICK_MS } from '../config.js';
 
 export const DEVICE_TYPE = 'appliance';
 
@@ -175,7 +176,13 @@ export function buildDevice(gladys, snapshot, config, models = buildFeatureModel
     external_id: ids.device,
     // The event stream is the primary channel; polling is the safety net for
     // the windows where it is down (the cloud cuts it about once a day).
-    poll_frequency: config.poll_frequency,
+    //
+    // Gladys only accepts its own enum of poll frequencies (in milliseconds,
+    // one minute at the slowest), so the device is published on that tick and
+    // the registry drops the ticks that come before `config.poll_frequency`
+    // seconds have passed. Sending the configured interval directly is what
+    // Gladys rejects with `devices[0].poll_frequency: invalid poll frequency`.
+    poll_frequency: GLADYS_POLL_TICK_MS,
     // Free key/value pairs shown on the device page — the identity of the
     // physical appliance, useful when two identical ovens sit side by side.
     params: buildParams(snapshot),

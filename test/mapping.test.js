@@ -11,7 +11,7 @@ import {
   FRIDGE_SETTINGS,
   FRIDGE_STATUSES,
 } from './helpers/fixtures.js';
-import { normalizeConfig } from '../src/config.js';
+import { GLADYS_POLL_TICK_MS, normalizeConfig } from '../src/config.js';
 import { buildDevice, buildFeatureModels, buildStates, toState } from '../src/mapping/appliance.js';
 import {
   OPTION_FEATURES,
@@ -98,7 +98,9 @@ test('buildDevice produces a Gladys discovery payload with stable external ids',
 
   assert.equal(device.external_id, `ext:home-connect:appliance:${DISHWASHER.haId}`);
   assert.equal(device.name, 'Dishwasher');
-  assert.equal(device.poll_frequency, config.poll_frequency);
+  // Gladys validates poll_frequency against its own enum of milliseconds, so
+  // the device carries its slowest tick, not the interval configured in seconds.
+  assert.equal(device.poll_frequency, GLADYS_POLL_TICK_MS);
   assert.deepEqual(
     device.params.find((param) => param.name === 'haId'),
     { name: 'haId', value: DISHWASHER.haId },

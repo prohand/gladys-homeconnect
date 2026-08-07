@@ -225,6 +225,7 @@ test('setValue refuses a read-only feature and an offline appliance', async () =
 test('polling one device only reads that appliance', async () => {
   const { api, registry } = await createRegistry();
   api.calls.length = 0;
+  registry.lastPollAt.clear();
 
   await registry.poll(deviceOf(FRIDGE.haId));
 
@@ -239,12 +240,37 @@ test('polling one device only reads that appliance', async () => {
 test('polling an appliance we never saw falls back to a full refresh', async () => {
   const { api, registry } = await createRegistry();
   registry.appliances.clear();
+  registry.lastPollAt.clear();
   api.calls.length = 0;
 
   await registry.poll(deviceOf(FRIDGE.haId));
 
   assert.ok(api.calls.some(([method]) => method === 'getAppliances'));
   assert.equal(registry.appliances.size, 2);
+});
+
+test('polling honours the configured interval instead of the Gladys tick', async () => {
+  // Gladys only accepts its own poll frequency enum (one minute at the
+  // slowest), so the configured interval is enforced here — otherwise every
+  // appliance would be read once a minute and burn the Home Connect quota.
+  const { api, registry } = await createRegistry();
+  api.calls.length = 0;
+
+  // The discovery read that just happened counts: the next tick is too early.
+  await registry.poll(deviceOf(FRIDGE.haId));
+  assert.equal(
+    api.calls.filter(([method]) => method === 'getAppliance').length,
+    0,
+    'a tick inside the configured interval must not call Home Connect',
+  );
+
+  registry.lastPollAt.set(FRIDGE.haId, Date.now() - config.poll_frequency * 1000);
+  await registry.poll(deviceOf(FRIDGE.haId));
+  assert.equal(
+    api.calls.filter(([method, haId]) => method === 'getAppliance' && haId === FRIDGE.haId).length,
+    1,
+    'once the interval has elapsed the appliance is read again',
+  );
 });
 
 test('external ids round-trip back to the haId and the feature suffix', () => {

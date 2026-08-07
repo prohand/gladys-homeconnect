@@ -36,6 +36,9 @@ const logger = createLogger({ name: 'appliances' });
 // trigger is debounced into one call.
 const REDISCOVERY_DEBOUNCE_MS = 5_000;
 
+// Slack allowed when comparing a Gladys tick to the configured interval.
+const POLL_TICK_TOLERANCE_MS = 1_000;
+
 export class ApplianceRegistry {
   /**
    * @param {object} options
@@ -50,6 +53,8 @@ export class ApplianceRegistry {
     /** @type {Map<string, {snapshot: object, models: object[], byKey: Map<string, object[]>, byFeatureId: Map<string, object>}>} */
     this.appliances = new Map();
     this.rediscoveryTimer = null;
+    /** @type {Map<string, number>} last effective poll per haId, for the throttle */
+    this.lastPollAt = new Map();
   }
 
   /** Every appliance as a Gladys discovery payload (used by onScanRequest). */
@@ -87,6 +92,7 @@ export class ApplianceRegistry {
       if (!seen.has(haId)) {
         logger.info(`Appliance ${haId} is gone from the account`);
         this.appliances.delete(haId);
+        this.lastPollAt.delete(haId);
       }
     }
 
@@ -117,6 +123,9 @@ export class ApplianceRegistry {
     }
 
     this.appliances.set(appliance.haId, { snapshot, models, byKey, byFeatureId });
+    // Any full read of the appliance restarts its polling clock, wherever it
+    // came from (discovery, re-discovery, poll): they all cost the same quota.
+    this.lastPollAt.set(appliance.haId, Date.now());
   }
 
   /**
@@ -270,10 +279,20 @@ export class ApplianceRegistry {
    * closes the stream about once a day, and a reconnection that lands badly
    * must not leave the devices frozen on yesterday's values.
    *
+   * Gladys ticks every minute (the slowest value its enum accepts, see
+   * `GLADYS_POLL_TICK_MS`); the interval the user configured is enforced here,
+   * because a minute-by-minute read of every appliance would eat the Home
+   * Connect daily quota before lunch.
+   *
    * @param {object} device the Gladys device being polled
    */
   async poll(device) {
     const haId = haIdFromExternalId(device.external_id);
+    if (!this.isPollDue(haId)) {
+      logger.debug(`Skipping the poll of ${haId}, the configured interval has not elapsed`);
+      return;
+    }
+
     const known = this.appliances.get(haId);
     if (!known) {
       // The user created the device from a previous discovery and the appliance
@@ -289,6 +308,23 @@ export class ApplianceRegistry {
     await this.refreshAppliance({ ...envelope, haId });
     await this.publishTransports();
     await this.publishSnapshotStates(haId);
+  }
+
+  /**
+   * True when `poll_frequency` seconds have passed since the last effective
+   * poll of this appliance. The first tick after a start always goes through:
+   * the snapshot may date from before a restart.
+   *
+   * @param {string} haId
+   */
+  isPollDue(haId) {
+    const last = this.lastPollAt.get(haId);
+    if (last === undefined) {
+      return true;
+    }
+    // A tick lands a few milliseconds early or late; without the tolerance an
+    // interval that is a whole number of ticks would systematically skip one.
+    return Date.now() - last >= this.getConfig().poll_frequency * 1000 - POLL_TICK_TOLERANCE_MS;
   }
 
   // --- Event stream ----------------------------------------------------------

@@ -32,6 +32,14 @@ export const DEFAULT_CONFIG = {
 
 const SUPPORTED_LANGUAGES = new Set(['en', 'fr']);
 
+// Gladys stores `poll_frequency` as an ENUM of milliseconds
+// (`DEVICE_POLL_FREQUENCIES`: 1 s, 2 s, 10 s, 15 s, 30 s, 60 s) and rejects
+// anything else with `invalid poll frequency`. Its slowest tick is one minute,
+// far too fast for the Home Connect daily quota, so every device is published
+// at that tick and the registry throttles the ticks down to the interval the
+// user actually configured (in seconds) — see ApplianceRegistry.poll().
+export const GLADYS_POLL_TICK_MS = 60_000;
+
 /**
  * Merge the user configuration with the defaults and derive the rest.
  * @param {Record<string, unknown>} raw configuration returned by the SDK

@@ -55,6 +55,12 @@ Polling stays armed behind it (`poll_frequency`, default 900 s) because Home
 Connect closes the stream roughly once a day, and a reconnection that lands badly
 must not silently freeze every device.
 
+Gladys stores a device's `poll_frequency` as an enum of milliseconds whose
+slowest value is one minute, and rejects anything else (`invalid poll
+frequency`). Devices are therefore published on that one-minute tick and the
+registry drops the ticks that arrive before the configured interval has elapsed,
+so the quota-facing behaviour is the one the user asked for.
+
 ## Project structure
 
 ```
