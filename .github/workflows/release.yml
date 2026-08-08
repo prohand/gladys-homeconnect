@@ -6,8 +6,9 @@
 # What it does, in one run:
 #   1. computes the next semver from `package.json` (npm version rules);
 #   2. writes it into `package.json`, `package-lock.json` AND the manifest
-#      (`gladys-assistant-integration.json`: both `version` and the
-#      `docker_image` tag, so the indexer and the image stay in lockstep);
+#      (`gladys-assistant-integration.json`: `version`, the `docker_image` tag
+#      and the `cover_image` URL, so the indexer, the image and the artwork all
+#      stay in lockstep);
 #   3. commits the bump and pushes the `vX.Y.Z` tag;
 #   4. calls build.yml to publish the multi-arch image (`:X.Y.Z` + `:latest`).
 #
@@ -63,13 +64,27 @@ jobs:
 
           image="ghcr.io/${GITHUB_REPOSITORY,,}:${new_version}"
 
+          # Cover image pinned to the release tag, never to a branch. A branch
+          # URL never changes, so caches downstream (raw.githubusercontent CDN,
+          # the indexer, the Gladys website) keep serving the cover captured the
+          # first time and a redesigned cover.png is simply never seen. Pinning
+          # the tag makes every release a brand-new URL, which nothing can have
+          # cached, and keeps old manifest versions showing the cover they
+          # shipped with.
+          cover="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/v${new_version}/cover.png"
+
           # Keep the manifest in lockstep: the version the indexer reads AND the
           # image tag Gladys pulls must both point at this release.
           tmp="$(mktemp)"
-          jq --arg version "$new_version" --arg image "$image" \
-            '.version = $version | .docker_image = $image' \
+          jq --arg version "$new_version" --arg image "$image" --arg cover "$cover" \
+            '.version = $version | .docker_image = $image | .cover_image = $cover' \
             gladys-assistant-integration.json > "$tmp"
           mv "$tmp" gladys-assistant-integration.json
+
+          # jq re-prints the whole document with its own layout, which is not
+          # Prettier's: without this the release commit lands on main with a
+          # failing `format:check`. Reformat what jq just wrote.
+          npx --yes prettier@3 --write gladys-assistant-integration.json
 
           echo "version=${new_version}" >> "$GITHUB_OUTPUT"
 

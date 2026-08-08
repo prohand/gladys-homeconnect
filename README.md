@@ -133,14 +133,20 @@ npx github:GladysAssistant/integration-store .
 
 1. Add the GitHub topic `gladys-assistant-integration` to this repository.
 2. **Actions → Release → Run workflow**, pick `patch`, `minor` or `major`. The
-   workflow bumps `package.json` and the manifest (`version` + `docker_image`),
-   pushes the `vX.Y.Z` tag and builds the `linux/amd64` + `linux/arm64` image to
-   `ghcr.io`.
+   workflow bumps `package.json` and the manifest (`version`, `docker_image` and
+   `cover_image`), pushes the `vX.Y.Z` tag and builds the `linux/amd64` +
+   `linux/arm64` image to `ghcr.io`.
 3. The decentralized indexer picks up the new manifest version and Gladys offers
    a one-click install or update.
 
 Replace `cover.png` (800×534 px, ≤ 150 KB) before publishing — the bundled one is
 the template's gradient placeholder.
+
+`cover_image` points at the raw file **on the release tag**, never on `main`, and
+the Release workflow re-pins it on every bump. A branch URL is stable forever, so
+the CDN and the indexer keep serving whatever cover they saw first: replacing
+`cover.png` alone then changes nothing on the site or in the app. A new cover
+therefore only becomes visible once a release ships the new tag URL.
 
 ## Notes and limits
 
