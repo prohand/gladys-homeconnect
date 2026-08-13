@@ -39,6 +39,22 @@ const REDISCOVERY_DEBOUNCE_MS = 5_000;
 // Slack allowed when comparing a Gladys tick to the configured interval.
 const POLL_TICK_TOLERANCE_MS = 1_000;
 
+// How long a published value stays "already said" before it is sent again.
+//
+// Gladys times every feature: past `DEVICE_STATE_NUMBER_OF_HOURS_BEFORE_STATE_IS_OUTDATED`
+// (48 h by default, and the user can lower it) without a new state, the value is
+// declared outdated and the dashboard replaces it with "No recent value". A Home
+// Connect appliance legitimately holds the same value for days — a dishwasher
+// sitting idle is still connected, still not low on salt, still allowed to be
+// started remotely — so the "same value again" filter below cannot be forever:
+// it would let true values expire out of the dashboard.
+//
+// Publishing an unchanged value is precisely how an integration says "still
+// true, checked just now", which is what Gladys measures. Once an hour is short
+// enough for any sane outdated threshold, and 24 values a day per feature is
+// nothing next to the 300 states/minute the host API allows.
+const STATE_REFRESH_MS = 60 * 60 * 1_000;
+
 export class ApplianceRegistry {
   /**
    * @param {object} options
@@ -55,7 +71,12 @@ export class ApplianceRegistry {
     this.rediscoveryTimer = null;
     /** @type {Map<string, number>} last effective poll per haId, for the throttle */
     this.lastPollAt = new Map();
-    /** @type {Map<string, string>} last state published per feature external_id */
+    /**
+     * Last state published per feature external_id, with when it was sent: the
+     * value answers "did anything change", the timestamp "is Gladys about to
+     * call this stale".
+     * @type {Map<string, {key: string, at: number}>}
+     */
     this.publishedStates = new Map();
     /**
      * haIds whose whole snapshot has been published while the Gladys device was
@@ -294,7 +315,8 @@ export class ApplianceRegistry {
 
   /**
    * Publish a batch of states, skipping the ones already published with the
-   * same value.
+   * same value — unless that was long enough ago for Gladys to be about to
+   * declare them outdated (see `STATE_REFRESH_MS`).
    *
    * The poll ticks every minute while a Home Connect appliance changes a couple
    * of times a day: without this filter every feature would get an identical
@@ -307,11 +329,8 @@ export class ApplianceRegistry {
    * @param {boolean} [options.force]
    */
   async pushStates(states, { force = false } = {}) {
-    const fresh = force
-      ? states
-      : states.filter(
-          (state) => this.publishedStates.get(state.device_feature_external_id) !== stateKey(state),
-        );
+    const now = Date.now();
+    const fresh = force ? states : states.filter((state) => this.needsPublishing(state, now));
     if (fresh.length === 0) {
       return;
     }
@@ -320,8 +339,24 @@ export class ApplianceRegistry {
     await this.gladys.publishStates(fresh);
     // Only after the publish succeeded: a failed batch must be sent again.
     for (const state of fresh) {
-      this.publishedStates.set(state.device_feature_external_id, stateKey(state));
+      this.publishedStates.set(state.device_feature_external_id, { key: stateKey(state), at: now });
     }
+  }
+
+  /**
+   * Whether a state is worth sending: a value Gladys has never seen, a value
+   * that changed, or one whose last publication is old enough to be about to
+   * expire on the dashboard.
+   *
+   * @param {{device_feature_external_id: string, state?: number, text?: string}} state
+   * @param {number} now
+   */
+  needsPublishing(state, now) {
+    const published = this.publishedStates.get(state.device_feature_external_id);
+    if (!published || published.key !== stateKey(state)) {
+      return true;
+    }
+    return now - published.at >= STATE_REFRESH_MS;
   }
 
   /**

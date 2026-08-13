@@ -108,6 +108,14 @@ sécurité, car Home Connect coupe le flux environ une fois par jour. Home Conne
 applique un quota de requêtes : gardez un intervalle élevé sauf raison
 particulière.
 
+Une valeur qui ne change pas est tout de même renvoyée à Gladys **au moins une
+fois par heure**. Gladys considère en effet qu'un état devient « périmé » au
+bout d'un certain délai (48 heures par défaut, réglable dans **Paramètres →
+Système**) et affiche alors « Pas de valeur récente » sur le tableau de bord. Un
+lave-vaisselle qui reste plusieurs jours dans le même état — connecté, réservoir
+de sel plein, aucun programme en cours — doit donc redire régulièrement que rien
+n'a changé. Ces renvois ne consomment aucune requête Home Connect.
+
 ## 5. Tester sans appareil
 
 Activez **Utiliser le simulateur Home Connect** dans la configuration.

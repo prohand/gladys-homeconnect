@@ -350,6 +350,30 @@ test('unchanged values are not republished tick after tick', async () => {
   assert.equal(lastStateOf(gladys, 'fridge-setpoint').state, 4, 'a change is published');
 });
 
+test('a value that has not moved for hours is re-stated before Gladys calls it outdated', async () => {
+  const { gladys, registry } = await createRegistry();
+  await registry.poll(deviceOf(FRIDGE.haId));
+  gladys.published.length = 0;
+
+  // A minute later: still the same values, still nothing to say.
+  await registry.poll(deviceOf(FRIDGE.haId));
+  assert.equal(gladys.published.length, 0);
+
+  // Hours later, with an appliance that changed nothing at all: Gladys times
+  // every feature and shows "no recent value" past its outdated threshold, so
+  // the unchanged values are sent again to confirm they still hold.
+  for (const [featureExternalId, published] of registry.publishedStates) {
+    registry.publishedStates.set(featureExternalId, {
+      ...published,
+      at: published.at - 2 * 60 * 60 * 1000,
+    });
+  }
+  await registry.poll(deviceOf(FRIDGE.haId));
+
+  assert.equal(lastStateOf(gladys, 'fridge-setpoint').state, 6);
+  assert.equal(lastStateOf(gladys, 'connected').state, 1);
+});
+
 test('deleting the device makes a later recreation publish everything again', async () => {
   const { gladys, registry } = await createRegistry();
   await registry.poll(deviceOf(FRIDGE.haId));
