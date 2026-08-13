@@ -325,6 +325,19 @@ function decodeFor(model, values, snapshot) {
     if (model.source === 'event') {
       return { state: 0 };
     }
+    // Program options only exist while a program is loaded: with nothing
+    // running, the appliance simply stops advertising "remaining time" or
+    // "elapsed time" instead of sending a zero. Read that as the same zero the
+    // registry publishes when a program ends — otherwise these features would
+    // hold the value the last cycle left behind and never be re-stated, which
+    // is exactly how they end up outdated on the dashboard.
+    if (
+      model.source === 'option' &&
+      !snapshot.activeProgram?.key &&
+      model.entry.category !== 'text'
+    ) {
+      return { state: 0 };
+    }
     return undefined;
   }
   return toState(model.entry.decode(values.get(model.hcKey)));

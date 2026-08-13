@@ -99,6 +99,13 @@ Polling (default: every 15 minutes) runs behind it as a safety net, because Home
 Connect closes the stream roughly once a day. Home Connect enforces a request
 quota, so keep the interval high unless you have a reason not to.
 
+A value that does not change is still re-sent to Gladys **at least once an
+hour**. Gladys declares a state outdated after a configurable delay (48 hours by
+default, under **Settings → System**) and then shows "No recent value" on the
+dashboard, so an appliance that sits in the same state for days — connected,
+salt tank full, no program running — has to keep saying that nothing changed.
+Those re-statements cost no Home Connect request.
+
 ## 5. Testing without an appliance
 
 Enable **Use the Home Connect simulator** in the configuration. The integration

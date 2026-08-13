@@ -169,6 +169,34 @@ test('buildStates leaves unreported values alone instead of publishing zero', ()
   assert.equal(ids.includes('door'), false);
 });
 
+test('an idle appliance reads zero on the options it no longer advertises', () => {
+  const gladys = createFakeGladys();
+  // Nothing running: Home Connect drops the program options entirely instead of
+  // sending zeros, so the progress features have to read zero on their own —
+  // otherwise they keep whatever the last cycle left, are never re-stated, and
+  // end up on "no recent value".
+  const snapshot = dishwasherSnapshot({ activeProgram: null, selectedProgram: null });
+  const states = buildStates(gladys, snapshot, buildFeatureModels(snapshot));
+  const byFeature = new Map(
+    states.map((state) => [state.device_feature_external_id.split(':').pop(), state]),
+  );
+
+  assert.equal(byFeature.get('remaining-time').state, 0);
+  assert.equal(byFeature.get('elapsed-time').state, 0);
+  assert.equal(byFeature.get('program-progress').state, 0);
+});
+
+test('a running program keeps an unreported option empty rather than zeroed', () => {
+  const gladys = createFakeGladys();
+  // The fixture program reports remaining time and progress, nothing else: with
+  // a cycle actually running, "not reported yet" is unknown, not zero.
+  const snapshot = dishwasherSnapshot();
+  const states = buildStates(gladys, snapshot, buildFeatureModels(snapshot));
+  const ids = states.map((state) => state.device_feature_external_id.split(':').pop());
+
+  assert.equal(ids.includes('elapsed-time'), false);
+});
+
 test('an event nobody raised is published as cleared, not left empty', () => {
   const gladys = createFakeGladys();
   const snapshot = dishwasherSnapshot();
