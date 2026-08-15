@@ -139,6 +139,17 @@ npx github:GladysAssistant/integration-store .
 3. The decentralized indexer picks up the new manifest version and Gladys offers
    a one-click install or update.
 
+The manifest declares the catalog shelf the integration sits on:
+`categories: ["appliances"]` (Gladys 4.86+, 1 to 3 keys among `climate`,
+`lighting`, `energy`, `security`, `multimedia`, `appliances`, `environment`,
+`protocols`, `network`, `notifications`, `assistants`, `services`). Home Connect
+drives ovens, dishwashers, washing machines, dryers, fridges, coffee machines and
+hoods — the lights and setpoints it exposes are internal to those appliances, not
+room lighting or home climate, so `appliances` alone is the honest placement.
+Declaring the field requires a `gladys_version` minimum of **4.86.0 or later**:
+older cores reject unknown manifest fields, and the store validator enforces the
+coupling (a manifest test pins it too).
+
 Replace `cover.png` (800×534 px, ≤ 150 KB) before publishing — the bundled one is
 the template's gradient placeholder.
 
