@@ -216,6 +216,16 @@ Cliquez de nouveau sur **Connecter**.
 **« Quota Home Connect atteint »** — trop de requêtes. L'intégration lève le pied
 d'elle-même ; augmentez l'intervalle de rafraîchissement si cela se répète.
 
+**Une carte du tableau de bord affiche « Lecture de vos appareils Home
+Connect… »** — l'intégration n'a pas encore lu le compte (redémarrage récent,
+quota atteint ou Home Connect injoignable au démarrage). La carte relance la
+lecture toute seule et se remplit en quelques secondes ; si le message persiste,
+regardez l'état de la connexion dans la configuration de l'intégration.
+
+**Une carte affiche « Cet appareil n'existe plus dans Gladys »** — l'appareil
+choisi dans les réglages de la carte a été supprimé de Gladys ou retiré du
+compte Home Connect. Rouvrez les réglages de la carte et choisissez-en un autre.
+
 **Un appareil affiche un badge orange « injoignable »** — c'est Home Connect
 lui-même qui ne le joint pas. Vérifiez dans l'application Home Connect qu'il est
 allumé et connecté à votre Wi-Fi.
