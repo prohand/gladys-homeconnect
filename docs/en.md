@@ -89,7 +89,69 @@ it, Home Connect refuses the command and Gladys shows the refusal message.
 
 Turning **Program running** off aborts the running program.
 
-## 4. How it stays up to date
+## 4. Dashboard, scenes and triggers
+
+Since **Gladys 5.1**, an integration can put its own cards on the dashboard and
+extend the scene editor. Home Connect uses all three.
+
+### The dashboard cards
+
+**Dashboard → Edit → Add a box**, integrations category:
+
+- **Home Connect** — every appliance in one card, one row each, with what it is
+  doing ("Running · Auto2 · 30 min"). Whatever is working shows up first. Leave
+  the _Appliances_ setting empty to show them all, or tick the ones you care
+  about.
+- **Appliance** — a single appliance: state, program, door, remaining time,
+  progress, and the _Start_ / _Pause_ / _Stop_ buttons. The buttons follow the
+  appliance: an idle one is offered _Start_, a running one _Pause_ and _Stop_.
+  Untick _Show the buttons_ for a read-only card.
+
+Remaining time and progress are bound to the appliance's own features: they move
+in real time, with no reload.
+
+### The scene triggers
+
+In a scene, **Add a trigger → Integrations**:
+
+| Trigger                            | Fires when                                                 |
+| ---------------------------------- | ---------------------------------------------------------- |
+| A program started                  | an appliance starts a cycle (or schedules a delayed start) |
+| A program finished                 | a cycle ends normally                                      |
+| A program was aborted              | a cycle is stopped before the end                          |
+| An appliance raised a notification | salt low, water tank empty, filter saturated, door alarm…  |
+
+Leave the _Appliance_ field empty to react to any of them. In the scene's
+actions, the trigger exposes `{{triggerEvent.data.appliance_name}}`,
+`{{triggerEvent.data.program}}` and, for notifications,
+`{{triggerEvent.data.notification_name}}` — enough to write "The dishwasher
+finished the Auto2 program" in a notification.
+
+An alert that **clears** fires nothing: only the moment it is raised is an
+event.
+
+### The scene actions
+
+In a scene, **Add an action → Integrations**:
+
+| Action                     | Effect                                                     |
+| -------------------------- | ---------------------------------------------------------- |
+| Start the selected program | runs the program already chosen on the appliance           |
+| Stop the running program   | aborts the cycle                                           |
+| Pause the program          | appliances that accept the pause command                   |
+| Resume the program         | restarts a paused cycle                                    |
+| Read the appliance status  | controls nothing: returns the state, program and time left |
+
+**Read the appliance status** is meant for the actions that follow it in the
+scene: it returns `state`, `program`, `running`, `remaining_seconds`,
+`remaining_label`, `progress`, `door`, `connected` and `summary` (a
+ready-to-send sentence). It reads what the integration already holds in memory:
+no Home Connect request, so no quota spent.
+
+The same limits as the **Program running** feature apply: starting runs the
+program selected on the appliance, and remote start must be armed there.
+
+## 5. How it stays up to date
 
 The integration holds a permanent **event stream** open to Home Connect, so a
 door opening or a program finishing reaches Gladys in about a second — including
@@ -106,13 +168,13 @@ dashboard, so an appliance that sits in the same state for days — connected,
 salt tank full, no program running — has to keep saying that nothing changed.
 Those re-statements cost no Home Connect request.
 
-## 5. Testing without an appliance
+## 6. Testing without an appliance
 
 Enable **Use the Home Connect simulator** in the configuration. The integration
 then talks to `simulator.home-connect.com`, which serves the same API against
 the virtual appliances of your developer account. Remember to turn it back off.
 
-## 6. Troubleshooting
+## 7. Troubleshooting
 
 **"Enter your Home Connect Client ID and Client Secret"** — the credentials are
 missing or empty.

@@ -96,7 +96,71 @@ commande et Gladys affiche le message de refus.
 
 Repasser **Programme en cours** sur « éteint » interrompt le programme.
 
-## 4. Comment les états restent à jour
+## 4. Tableau de bord, scènes et déclencheurs
+
+Depuis **Gladys 5.1**, une intégration peut poser ses propres cartes sur le
+tableau de bord et enrichir l'éditeur de scènes. Home Connect utilise les trois.
+
+### Les cartes du tableau de bord
+
+**Tableau de bord → Modifier → Ajouter une boîte**, catégorie des intégrations :
+
+- **Home Connect** — tous vos appareils dans une carte, une ligne par appareil,
+  avec ce qu'il fait (« En marche · Auto2 · 30 min »). Ce qui tourne est en
+  haut. Laissez le réglage _Appareils_ vide pour tout afficher, ou cochez ceux
+  qui vous intéressent.
+- **Appareil** — un seul appareil : état, programme, porte, temps restant,
+  progression, et les boutons _Démarrer_ / _Pause_ / _Arrêter_. Les boutons
+  s'adaptent : un appareil à l'arrêt propose _Démarrer_, un appareil en marche
+  propose _Pause_ et _Arrêter_. Décochez _Afficher les boutons_ pour une carte
+  en lecture seule.
+
+Le temps restant et la progression sont branchés directement sur les
+fonctionnalités de l'appareil : ils bougent en temps réel, sans rechargement.
+
+### Les déclencheurs de scènes
+
+Dans une scène, **Ajouter un déclencheur → Intégrations** :
+
+| Déclencheur                         | Se déclenche quand                                          |
+| ----------------------------------- | ----------------------------------------------------------- |
+| Un programme a démarré              | un appareil lance un cycle (ou programme un départ différé) |
+| Un programme est terminé            | un cycle se termine normalement                             |
+| Un programme a été interrompu       | un cycle est arrêté avant la fin                            |
+| Un appareil a signalé quelque chose | sel bas, réservoir vide, filtre saturé, alarme de porte…    |
+
+Laissez le champ _Appareil_ vide pour réagir à n'importe quel appareil. Dans les
+actions de la scène, le déclencheur fournit `{{triggerEvent.data.appliance_name}}`,
+`{{triggerEvent.data.program}}` et, pour les notifications,
+`{{triggerEvent.data.notification_name}}` — de quoi écrire « Le lave-vaisselle a
+terminé le programme Auto2 » dans une notification.
+
+Une alerte qui **s'éteint** ne déclenche rien : seul le moment où elle se lève
+est un événement.
+
+### Les actions de scènes
+
+Dans une scène, **Ajouter une action → Intégrations** :
+
+| Action                            | Effet                                                           |
+| --------------------------------- | --------------------------------------------------------------- |
+| Démarrer le programme sélectionné | lance le programme déjà choisi sur l'appareil                   |
+| Arrêter le programme en cours     | interrompt le cycle                                             |
+| Mettre le programme en pause      | appareils qui acceptent la commande pause                       |
+| Reprendre le programme            | relance un cycle en pause                                       |
+| Lire l'état de l'appareil         | ne pilote rien : renvoie l'état, le programme, le temps restant |
+
+**Lire l'état de l'appareil** est faite pour les actions suivantes de la scène :
+elle renvoie `state`, `program`, `running`, `remaining_seconds`,
+`remaining_label`, `progress`, `door`, `connected` et `summary` (une phrase
+prête à envoyer). Elle lit ce que l'intégration a déjà en mémoire : aucune
+requête Home Connect, donc aucun quota consommé.
+
+Les mêmes limites que pour la fonctionnalité **Programme en cours**
+s'appliquent : démarrer lance le programme sélectionné sur l'appareil, et le
+démarrage à distance doit y être armé.
+
+## 5. Comment les états restent à jour
 
 L'intégration maintient ouvert un **flux d'événements** permanent vers Home
 Connect : une porte qui s'ouvre ou un programme qui se termine arrive dans
@@ -116,14 +180,14 @@ lave-vaisselle qui reste plusieurs jours dans le même état — connecté, rés
 de sel plein, aucun programme en cours — doit donc redire régulièrement que rien
 n'a changé. Ces renvois ne consomment aucune requête Home Connect.
 
-## 5. Tester sans appareil
+## 6. Tester sans appareil
 
 Activez **Utiliser le simulateur Home Connect** dans la configuration.
 L'intégration s'adresse alors à `simulator.home-connect.com`, qui sert la même
 API sur les appareils virtuels de votre compte développeur. Pensez à le
 désactiver ensuite.
 
-## 6. Dépannage
+## 7. Dépannage
 
 **« Renseignez vos Client ID et Client Secret Home Connect »** — les identifiants
 sont absents ou vides.

@@ -61,11 +61,19 @@ export class ApplianceRegistry {
    * @param {object} options.gladys SDK instance
    * @param {import('./homeconnect/api.js').HomeConnectApi} options.api
    * @param {() => object} options.getConfig
+   * @param {(event: object, snapshot: object) => Promise<void>} [options.onApplianceEvent]
+   *   Called with every stream event BEFORE it is merged into the snapshot, so
+   *   the scene bridge can tell a transition from a value being restated.
+   * @param {() => void} [options.onApplianceChanged]
+   *   Called once per batch of published states, so the dashboard widgets can
+   *   be nudged instead of waiting for their TTL.
    */
-  constructor({ gladys, api, getConfig }) {
+  constructor({ gladys, api, getConfig, onApplianceEvent, onApplianceChanged }) {
     this.gladys = gladys;
     this.api = api;
     this.getConfig = getConfig;
+    this.onApplianceEvent = onApplianceEvent ?? null;
+    this.onApplianceChanged = onApplianceChanged ?? null;
     /** @type {Map<string, {snapshot: object, models: object[], byKey: Map<string, object[]>, byFeatureId: Map<string, object>}>} */
     this.appliances = new Map();
     this.rediscoveryTimer = null;
@@ -341,6 +349,19 @@ export class ApplianceRegistry {
     for (const state of fresh) {
       this.publishedStates.set(state.device_feature_external_id, { key: stateKey(state), at: now });
     }
+    this.notifyChanged();
+  }
+
+  /**
+   * Something the dashboard may be showing has moved. Never let this break the
+   * path that published it: a widget nudge is a courtesy, a state is the job.
+   */
+  notifyChanged() {
+    try {
+      this.onApplianceChanged?.();
+    } catch (err) {
+      logger.debug(`Widget nudge failed: ${err.message}`);
+    }
   }
 
   /**
@@ -493,6 +514,11 @@ export class ApplianceRegistry {
     if (!appliance || !event.key) {
       return;
     }
+
+    // Scene triggers FIRST, while `snapshot` still holds the previous values:
+    // "a program started" is a transition, and the only thing that proves one
+    // is the state the appliance was in a line ago. The bridge never throws.
+    await this.onApplianceEvent?.(event, appliance.snapshot);
 
     // Keep the snapshot in sync so a later poll or re-publish starts from the
     // truth, not from the last full read.
@@ -684,6 +710,41 @@ export class ApplianceRegistry {
         this.publishedStates.delete(key);
       }
     }
+  }
+
+  /**
+   * Every appliance currently known, as the widgets want them: the snapshot to
+   * describe, the indexes to test a feature against, and the device
+   * external_id a widget setting or a scene field carries.
+   * @returns {Array<{haId: string, snapshot: object, models: object[], byFeatureId: Map<string, object>, deviceExternalId: string}>}
+   */
+  list() {
+    return [...this.appliances.entries()].map(([haId, appliance]) => ({
+      haId,
+      ...appliance,
+      deviceExternalId: this.deviceExternalId(haId),
+    }));
+  }
+
+  /**
+   * The appliance behind a Gladys device external_id — what a `source:
+   * "devices"` widget setting or scene action field resolves to.
+   *
+   * The external_id is compared in full rather than reduced to its haId: a
+   * device of another integration would otherwise match on its last segment.
+   * @param {string} externalId
+   */
+  findByDeviceExternalId(externalId) {
+    const haId = haIdFromExternalId(externalId);
+    const appliance = this.appliances.get(haId);
+    if (!appliance || this.deviceExternalId(haId) !== externalId) {
+      return undefined;
+    }
+    return { haId, ...appliance, deviceExternalId: externalId };
+  }
+
+  deviceExternalId(haId) {
+    return this.gladys.externalIds(DEVICE_TYPE, haId).device;
   }
 
   featureExternalId(haId, featureId) {

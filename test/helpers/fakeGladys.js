@@ -12,6 +12,12 @@ export function createFakeGladys() {
   const transports = [];
   const connectionStatuses = [];
   const configPatches = [];
+  // Gladys 5.1: the scene events fired, the widget nudges sent, and the
+  // handlers the integration registered (so a test can call them the way the
+  // core would).
+  const sceneEvents = [];
+  const widgetRefreshes = [];
+  const handlers = new Map();
 
   return {
     published,
@@ -19,6 +25,9 @@ export function createFakeGladys() {
     transports,
     connectionStatuses,
     configPatches,
+    sceneEvents,
+    widgetRefreshes,
+    handlers,
 
     externalIds(type, platformId) {
       const device = `ext:home-connect:${type}:${platformId}`;
@@ -57,7 +66,44 @@ export function createFakeGladys() {
     async setConfig(patch) {
       configPatches.push(patch);
     },
+
+    // --- Gladys 5.1: scene triggers, scene actions, dashboard widgets --------
+
+    async publishSceneEvent(key, data) {
+      sceneEvents.push({ key, data });
+      return { success: true };
+    },
+
+    onSceneAction(key, callback) {
+      handlers.set(`sceneAction:${key}`, callback);
+    },
+
+    onWidgetGet(key, callback) {
+      handlers.set(`widget:${key}`, callback);
+    },
+
+    onWidgetAction(key, callback) {
+      handlers.set(`widgetAction:${key}`, callback);
+    },
+
+    requestWidgetRefresh(key) {
+      widgetRefreshes.push(key);
+    },
   };
+}
+
+/**
+ * Call a handler the integration registered, the way the Gladys core would.
+ * @param {ReturnType<typeof createFakeGladys>} gladys
+ * @param {string} name `sceneAction:<key>`, `widget:<key>`, `widgetAction:<key>`
+ * @param {...unknown} args
+ */
+export function invoke(gladys, name, ...args) {
+  const handler = gladys.handlers.get(name);
+  if (!handler) {
+    throw new Error(`No handler registered for ${name}`);
+  }
+  return handler(...args);
 }
 
 /**
