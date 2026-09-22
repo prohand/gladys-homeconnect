@@ -6,10 +6,10 @@
     "en": "Monitor and control your Bosch, Siemens, Neff and Gaggenau appliances via Home Connect.",
     "fr": "Pilotez et suivez vos appareils Bosch, Siemens, Neff et Gaggenau via Home Connect."
   },
-  "version": "1.0.5",
-  "docker_image": "ghcr.io/prohand/gladys-homeconnect:1.0.5",
+  "version": "2.0.0",
+  "docker_image": "ghcr.io/prohand/gladys-homeconnect:2.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/prohand/gladys-homeconnect/v1.0.5/cover.png",
+  "cover_image": "https://raw.githubusercontent.com/prohand/gladys-homeconnect/v2.0.0/cover.png",
   "categories": ["appliances"],
   "transports": ["cloud"],
   "config_schema": [
