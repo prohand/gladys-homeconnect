@@ -29,6 +29,7 @@ import { createLogger, WIDGET_COLORS } from '@gladysassistant/integration-sdk';
 import { OPTION_FEATURES, STATUS_FEATURES } from './mapping/catalog.js';
 import { COMMANDS, OPTIONS, STATUSES } from './homeconnect/constants.js';
 import { describeAppliance, truncate } from './mapping/describe.js';
+import { hasCredentials } from './config.js';
 
 const logger = createLogger({ name: 'widgets' });
 
@@ -59,6 +60,17 @@ const TTL_SECONDS = 60;
 // alternative is a card sitting on a stale sentence until its TTL expires.
 const NUDGE_THROTTLE_MS = 2_000;
 
+// A card answered while the account has never been read is a card that must
+// come back on its own: it says "reading…" and asks to be pulled again shortly,
+// instead of sitting on the TTL of a value it does not have.
+const LOADING_TTL_SECONDS = 15;
+
+// Two widgets on a dashboard, two pulls: the account re-read they trigger is
+// deduplicated by the in-flight promise, and the cooldown keeps a permanently
+// failing account (expired token, quota reached) from being re-read on every
+// single pull.
+const RELOAD_COOLDOWN_MS = 60_000;
+
 // The status list of the overview caps at 10 rows core-side; a Home Connect
 // account with more than that is a showroom, not a kitchen.
 const MAX_OVERVIEW_ROWS = 10;
@@ -67,6 +79,18 @@ const TEXTS = {
   noAppliance: {
     en: 'No Home Connect appliance yet. Add one from the Discovery tab.',
     fr: 'Aucun appareil Home Connect. Ajoutez-en un depuis l’onglet Découverte.',
+  },
+  noCredentials: {
+    en: 'Home Connect is not configured yet: enter your Client ID and Client Secret in the integration settings.',
+    fr: 'Home Connect n’est pas configuré : renseignez vos Client ID et Client Secret dans la configuration de l’intégration.',
+  },
+  notConnected: {
+    en: 'Home Connect account not connected: click Connect in the integration settings.',
+    fr: 'Compte Home Connect non connecté : cliquez sur Connecter dans la configuration de l’intégration.',
+  },
+  loading: {
+    en: 'Reading your Home Connect appliances…',
+    fr: 'Lecture de vos appareils Home Connect…',
   },
   running: { en: 'Running', fr: 'En cours' },
   remaining: { en: 'Remaining', fr: 'Temps restant' },
@@ -90,13 +114,20 @@ export class WidgetBridge {
    * @param {object} options.gladys SDK instance
    * @param {import('./appliances.js').ApplianceRegistry} options.registry
    * @param {import('./homeconnect/api.js').HomeConnectApi} options.api
+   * @param {() => object} [options.getConfig] the normalized configuration, to
+   *   tell an account that is not configured from one that is simply not read
+   *   yet — the two empty cards look the same and are not fixed the same way.
    */
-  constructor({ gladys, registry, api }) {
+  constructor({ gladys, registry, api, getConfig }) {
     this.gladys = gladys;
     this.registry = registry;
     this.api = api;
+    this.getConfig = getConfig ?? (() => ({}));
     this.lastNudgeAt = 0;
     this.pendingNudge = null;
+    this.lastReloadAt = 0;
+    /** @type {Promise<unknown>|null} the account re-read in flight, if any */
+    this.reloading = null;
   }
 
   /** Register the two widget handlers. Call it BEFORE `connect()`. */
@@ -151,6 +182,61 @@ export class WidgetBridge {
     }
   }
 
+  // --- Nothing to show -------------------------------------------------------
+
+  /**
+   * The card has no appliance to render. Three very different situations look
+   * identical from the dashboard, and only one of them is "add an appliance":
+   *
+   *   - the account was read and holds nothing  -> add one from Discovery;
+   *   - the integration is not configured / not connected -> say which, the fix
+   *     is two screens away;
+   *   - the account has never been read (the container restarted while Home
+   *     Connect was down, the first read hit the quota, the token had expired)
+   *     -> read it now and come back in a few seconds, on our own.
+   *
+   * The last one is the case this method exists for: before it, a widget in
+   * that state stayed empty until something else — a poll tick, a saved
+   * configuration — happened to refill the registry.
+   */
+  emptyContent() {
+    if (this.registry.loadedAt !== null) {
+      return { ttl_seconds: TTL_SECONDS, components: [text(TEXTS.noAppliance)] };
+    }
+    if (!hasCredentials(this.getConfig())) {
+      return { ttl_seconds: TTL_SECONDS, components: [text(TEXTS.noCredentials)] };
+    }
+    if (!this.api.isAuthorized()) {
+      return { ttl_seconds: TTL_SECONDS, components: [text(TEXTS.notConnected)] };
+    }
+    this.scheduleReload();
+    return { ttl_seconds: LOADING_TTL_SECONDS, components: [text(TEXTS.loading)] };
+  }
+
+  /**
+   * Re-read the account in the background, at most one at a time and at most
+   * one per cooldown.
+   *
+   * Not awaited on purpose: a full account read is a dozen Home Connect calls
+   * per appliance, well past the 15 s the core gives a widget to answer. The
+   * card answers "reading…" with a short TTL, the read publishes the states it
+   * finds — which nudges both widgets — and the next pull renders for real.
+   */
+  scheduleReload() {
+    if (this.reloading || Date.now() - this.lastReloadAt < RELOAD_COOLDOWN_MS) {
+      return;
+    }
+    this.lastReloadAt = Date.now();
+    logger.info('A widget was pulled before the account was read: refreshing it now');
+    this.reloading = this.registry
+      .refresh()
+      .then((count) => logger.info(`Widget-triggered refresh: ${count} appliance(s)`))
+      .catch((err) => logger.warn(`Widget-triggered refresh failed: ${err.message}`))
+      .finally(() => {
+        this.reloading = null;
+      });
+  }
+
   // --- Contents --------------------------------------------------------------
 
   /**
@@ -165,7 +251,7 @@ export class WidgetBridge {
       .filter((entry) => chosen.length === 0 || chosen.includes(entry.deviceExternalId));
 
     if (entries.length === 0) {
-      return { ttl_seconds: TTL_SECONDS, components: [text(TEXTS.noAppliance)] };
+      return this.emptyContent();
     }
 
     const descriptions = entries
@@ -204,6 +290,13 @@ export class WidgetBridge {
   async buildAppliance({ settings = {}, language = 'en' } = {}) {
     const entry = this.registry.findByDeviceExternalId(String(settings.appliance ?? ''));
     if (!entry) {
+      if (this.registry.loadedAt === null) {
+        // The device exists in Gladys — the user picked it from the list — we
+        // simply have not read the account yet. "Pick another one" would be a
+        // lie, and a lie the user cannot act on: say what is actually missing
+        // and get the account read.
+        return this.emptyContent();
+      }
       // Throwing is the documented way to say "no data": the card shows the
       // message instead of a plausible-looking empty state.
       throw new Error('This appliance no longer exists in Gladys, pick another one');
@@ -309,6 +402,10 @@ export class WidgetBridge {
   async runAction(actionKey, { settings = {} } = {}) {
     const entry = this.registry.findByDeviceExternalId(String(settings.appliance ?? ''));
     if (!entry) {
+      if (this.registry.loadedAt === null) {
+        this.scheduleReload();
+        throw new Error('Home Connect appliances are not loaded yet, try again in a moment');
+      }
       throw new Error('This appliance no longer exists in Gladys');
     }
     if (entry.snapshot.connected === false) {

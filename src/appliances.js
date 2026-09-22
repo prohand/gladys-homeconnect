@@ -93,6 +93,14 @@ export class ApplianceRegistry {
      * @type {Set<string>}
      */
     this.fullyPublished = new Set();
+    /**
+     * When the account was last read end to end, or `null` while it never was.
+     * An empty map means two very different things — an account with no
+     * appliance, or an account never read because the first read failed — and
+     * the widgets answer differently to each.
+     * @type {number|null}
+     */
+    this.loadedAt = null;
   }
 
   /** Every appliance as a Gladys discovery payload (used by onScanRequest). */
@@ -136,6 +144,7 @@ export class ApplianceRegistry {
     }
 
     await this.publishAll();
+    this.loadedAt = Date.now();
     return this.appliances.size;
   }
 

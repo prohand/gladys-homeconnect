@@ -29,6 +29,19 @@ async function createWidgets(apiOverrides = {}) {
 }
 
 /**
+ * The same wiring, with the account NEVER read: a container that restarted
+ * while Home Connect was unreachable, or whose first read hit the daily quota.
+ */
+function createColdWidgets({ api: apiOverrides = {}, config: widgetConfig = config } = {}) {
+  const gladys = createFakeGladys();
+  const api = createFakeApi(apiOverrides);
+  const registry = new ApplianceRegistry({ gladys, api, getConfig: () => config });
+  const widgets = new WidgetBridge({ gladys, registry, api, getConfig: () => widgetConfig });
+  widgets.register();
+  return { gladys, api, registry, widgets };
+}
+
+/**
  * Every content this integration produces must be renderable EXACTLY as sent:
  * the Gladys core silently trims what does not fit its budget, so a widget
  * that ships is a widget the SDK validator accepts with zero findings.
@@ -255,4 +268,94 @@ test('a burst of state batches collapses into one deferred nudge', async () => {
   widgets.sendNudge();
   assert.deepEqual([...new Set(gladys.widgetRefreshes)].sort(), ['appliance', 'appliances']);
   clearTimeout(widgets.pendingNudge);
+});
+
+test('a card pulled before the account was read says so and reads it', async () => {
+  const { gladys, api, registry, widgets } = createColdWidgets({
+    config: normalizeConfig({ language: 'fr', client_id: 'id', client_secret: 'secret' }),
+  });
+
+  const content = await invoke(gladys, `widget:${WIDGETS.OVERVIEW}`, {
+    settings: {},
+    language: 'fr',
+    units: 'metric',
+  });
+
+  assertRenderable(content);
+  assert.match(content.components[0].text.fr, /Lecture de vos appareils/);
+  // Short TTL: the card must come back on its own once the read lands.
+  assert.ok(content.ttl_seconds <= 15);
+
+  await widgets.reloading;
+  assert.equal(registry.appliances.size, 2);
+  assert.ok(api.calls.some(([name]) => name === 'getAppliances'));
+});
+
+test('the appliance card waits for the account instead of blaming the setting', async () => {
+  const { gladys, widgets } = createColdWidgets({
+    config: normalizeConfig({ language: 'fr', client_id: 'id', client_secret: 'secret' }),
+  });
+
+  // The device exists in Gladys — the user picked it from the list — only the
+  // account has not been read yet: "pick another one" would send them fixing
+  // a setting that is perfectly fine.
+  const content = await invoke(gladys, `widget:${WIDGETS.APPLIANCE}`, {
+    settings: { appliance: DISHWASHER_DEVICE },
+    language: 'fr',
+    units: 'metric',
+  });
+
+  assertRenderable(content);
+  assert.match(content.components[0].text.fr, /Lecture de vos appareils/);
+  await widgets.reloading;
+});
+
+test('an account that is not connected says which screen to go to', async () => {
+  const notConfigured = createColdWidgets({ config: normalizeConfig({ language: 'fr' }) });
+  const noCredentials = await invoke(notConfigured.gladys, `widget:${WIDGETS.OVERVIEW}`, {
+    settings: {},
+    language: 'fr',
+    units: 'metric',
+  });
+  assertRenderable(noCredentials);
+  assert.match(noCredentials.components[0].text.fr, /Client ID/);
+  assert.equal(notConfigured.api.calls.length, 0);
+
+  const notAuthorized = createColdWidgets({
+    api: { isAuthorized: () => false },
+    config: normalizeConfig({ language: 'fr', client_id: 'id', client_secret: 'secret' }),
+  });
+  const content = await invoke(notAuthorized.gladys, `widget:${WIDGETS.OVERVIEW}`, {
+    settings: {},
+    language: 'fr',
+    units: 'metric',
+  });
+  assertRenderable(content);
+  assert.match(content.components[0].text.fr, /Connecter/);
+  assert.equal(notAuthorized.api.calls.length, 0);
+});
+
+test('a failing account is not re-read on every single pull', async () => {
+  let attempts = 0;
+  const { gladys, widgets } = createColdWidgets({
+    api: {
+      async getAppliances() {
+        attempts += 1;
+        throw new Error('429 Too Many Requests');
+      },
+    },
+    config: normalizeConfig({ language: 'fr', client_id: 'id', client_secret: 'secret' }),
+  });
+
+  for (let i = 0; i < 3; i += 1) {
+    const content = await invoke(gladys, `widget:${WIDGETS.OVERVIEW}`, {
+      settings: {},
+      language: 'en',
+      units: 'metric',
+    });
+    assertRenderable(content);
+    await widgets.reloading;
+  }
+
+  assert.equal(attempts, 1);
 });

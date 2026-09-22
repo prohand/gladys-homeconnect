@@ -74,7 +74,7 @@ const registry = new ApplianceRegistry({
 });
 
 const scenes = new SceneBridge({ gladys, api, registry, getConfig: () => config });
-const widgets = new WidgetBridge({ gladys, registry, api });
+const widgets = new WidgetBridge({ gladys, registry, api, getConfig: () => config });
 
 // --- Discovery: Gladys asks for the list of devices --------------------------
 gladys.onScanRequest(async () => {

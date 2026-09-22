@@ -202,6 +202,16 @@ Connect account. Click **Connect** again.
 **"Home Connect rate limit reached"** — too many requests. The integration backs
 off on its own; raise the refresh interval if it keeps happening.
 
+**A dashboard card reads "Reading your Home Connect appliances…"** — the
+integration has not read the account yet (recent restart, rate limit reached, or
+Home Connect unreachable at startup). The card triggers the read itself and
+fills in within seconds; if the message stays, check the connection status in the
+integration settings.
+
+**A card reads "This appliance no longer exists in Gladys"** — the appliance
+picked in the card settings was deleted from Gladys or removed from the Home
+Connect account. Reopen the card settings and pick another one.
+
 **An appliance shows an orange "unreachable" badge** — Home Connect itself
 cannot reach it. Check that it is powered on and connected to your Wi-Fi, in the
 Home Connect app.
