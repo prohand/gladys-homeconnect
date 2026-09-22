@@ -8,7 +8,7 @@
   },
   "version": "1.0.5",
   "docker_image": "ghcr.io/prohand/gladys-homeconnect:1.0.5",
-  "gladys_version": ">=4.86.0",
+  "gladys_version": ">=5.1.0",
   "cover_image": "https://raw.githubusercontent.com/prohand/gladys-homeconnect/v1.0.5/cover.png",
   "categories": ["appliances"],
   "transports": ["cloud"],
@@ -175,6 +175,729 @@
         "fr": "Actualiser les appareils"
       },
       "timeout_seconds": 60
+    }
+  ],
+  "scene_triggers": [
+    {
+      "key": "program_started",
+      "label": {
+        "en": "A program started",
+        "fr": "Un programme a démarré"
+      },
+      "description": {
+        "en": "An appliance started a program, or scheduled a delayed start.",
+        "fr": "Un appareil a lancé un programme, ou programmé un départ différé."
+      },
+      "fields": [
+        {
+          "key": "appliance",
+          "type": "select",
+          "label": {
+            "en": "Appliance",
+            "fr": "Appareil"
+          },
+          "description": {
+            "en": "Leave empty to react to any Home Connect appliance.",
+            "fr": "Laissez vide pour réagir à n’importe quel appareil Home Connect."
+          },
+          "source": "devices"
+        }
+      ],
+      "variables": [
+        {
+          "key": "appliance",
+          "type": "string",
+          "label": {
+            "en": "Appliance",
+            "fr": "Appareil"
+          }
+        },
+        {
+          "key": "appliance_name",
+          "type": "string",
+          "label": {
+            "en": "Appliance name",
+            "fr": "Nom de l’appareil"
+          }
+        },
+        {
+          "key": "appliance_type",
+          "type": "string",
+          "label": {
+            "en": "Appliance type",
+            "fr": "Type d’appareil"
+          }
+        },
+        {
+          "key": "program",
+          "type": "string",
+          "label": {
+            "en": "Program",
+            "fr": "Programme"
+          }
+        },
+        {
+          "key": "program_key",
+          "type": "string",
+          "label": {
+            "en": "Program key",
+            "fr": "Clé du programme"
+          }
+        }
+      ]
+    },
+    {
+      "key": "program_finished",
+      "label": {
+        "en": "A program finished",
+        "fr": "Un programme est terminé"
+      },
+      "description": {
+        "en": "An appliance finished its program normally.",
+        "fr": "Un appareil a terminé son programme normalement."
+      },
+      "fields": [
+        {
+          "key": "appliance",
+          "type": "select",
+          "label": {
+            "en": "Appliance",
+            "fr": "Appareil"
+          },
+          "description": {
+            "en": "Leave empty to react to any Home Connect appliance.",
+            "fr": "Laissez vide pour réagir à n’importe quel appareil Home Connect."
+          },
+          "source": "devices"
+        }
+      ],
+      "variables": [
+        {
+          "key": "appliance",
+          "type": "string",
+          "label": {
+            "en": "Appliance",
+            "fr": "Appareil"
+          }
+        },
+        {
+          "key": "appliance_name",
+          "type": "string",
+          "label": {
+            "en": "Appliance name",
+            "fr": "Nom de l’appareil"
+          }
+        },
+        {
+          "key": "appliance_type",
+          "type": "string",
+          "label": {
+            "en": "Appliance type",
+            "fr": "Type d’appareil"
+          }
+        },
+        {
+          "key": "program",
+          "type": "string",
+          "label": {
+            "en": "Program",
+            "fr": "Programme"
+          }
+        },
+        {
+          "key": "program_key",
+          "type": "string",
+          "label": {
+            "en": "Program key",
+            "fr": "Clé du programme"
+          }
+        }
+      ]
+    },
+    {
+      "key": "program_aborted",
+      "label": {
+        "en": "A program was aborted",
+        "fr": "Un programme a été interrompu"
+      },
+      "description": {
+        "en": "A program was stopped before the end, on the appliance or from Gladys.",
+        "fr": "Un programme a été arrêté avant la fin, sur l’appareil ou depuis Gladys."
+      },
+      "fields": [
+        {
+          "key": "appliance",
+          "type": "select",
+          "label": {
+            "en": "Appliance",
+            "fr": "Appareil"
+          },
+          "description": {
+            "en": "Leave empty to react to any Home Connect appliance.",
+            "fr": "Laissez vide pour réagir à n’importe quel appareil Home Connect."
+          },
+          "source": "devices"
+        }
+      ],
+      "variables": [
+        {
+          "key": "appliance",
+          "type": "string",
+          "label": {
+            "en": "Appliance",
+            "fr": "Appareil"
+          }
+        },
+        {
+          "key": "appliance_name",
+          "type": "string",
+          "label": {
+            "en": "Appliance name",
+            "fr": "Nom de l’appareil"
+          }
+        },
+        {
+          "key": "appliance_type",
+          "type": "string",
+          "label": {
+            "en": "Appliance type",
+            "fr": "Type d’appareil"
+          }
+        },
+        {
+          "key": "program",
+          "type": "string",
+          "label": {
+            "en": "Program",
+            "fr": "Programme"
+          }
+        },
+        {
+          "key": "program_key",
+          "type": "string",
+          "label": {
+            "en": "Program key",
+            "fr": "Clé du programme"
+          }
+        }
+      ]
+    },
+    {
+      "key": "appliance_notification",
+      "label": {
+        "en": "An appliance raised a notification",
+        "fr": "Un appareil a signalé quelque chose"
+      },
+      "description": {
+        "en": "Salt or rinse aid low, water tank empty, door left open, filter saturated…",
+        "fr": "Sel ou liquide de rinçage bas, réservoir vide, porte restée ouverte, filtre saturé…"
+      },
+      "fields": [
+        {
+          "key": "appliance",
+          "type": "select",
+          "label": {
+            "en": "Appliance",
+            "fr": "Appareil"
+          },
+          "description": {
+            "en": "Leave empty to react to any Home Connect appliance.",
+            "fr": "Laissez vide pour réagir à n’importe quel appareil Home Connect."
+          },
+          "source": "devices"
+        },
+        {
+          "key": "notification",
+          "type": "multi_select",
+          "label": {
+            "en": "Notifications",
+            "fr": "Notifications"
+          },
+          "description": {
+            "en": "Leave empty to react to every notification the appliance raises.",
+            "fr": "Laissez vide pour réagir à toutes les notifications de l’appareil."
+          },
+          "options": [
+            {
+              "value": "event-alarm-clock",
+              "label": {
+                "en": "Timer elapsed",
+                "fr": "Minuteur écoulé"
+              }
+            },
+            {
+              "value": "event-preheat-finished",
+              "label": {
+                "en": "Preheating finished",
+                "fr": "Préchauffage terminé"
+              }
+            },
+            {
+              "value": "event-regular-preheat-finished",
+              "label": {
+                "en": "Regular preheating finished",
+                "fr": "Préchauffage standard terminé"
+              }
+            },
+            {
+              "value": "event-grease-filter-nearly-saturated",
+              "label": {
+                "en": "Grease filter nearly saturated",
+                "fr": "Filtre à graisse presque saturé"
+              }
+            },
+            {
+              "value": "event-grease-filter-saturated",
+              "label": {
+                "en": "Grease filter saturated",
+                "fr": "Filtre à graisse saturé"
+              }
+            },
+            {
+              "value": "event-salt-nearly-empty",
+              "label": {
+                "en": "Salt nearly empty",
+                "fr": "Sel presque vide"
+              }
+            },
+            {
+              "value": "event-rinse-aid-nearly-empty",
+              "label": {
+                "en": "Rinse aid nearly empty",
+                "fr": "Liquide de rinçage presque vide"
+              }
+            },
+            {
+              "value": "event-bean-container-empty",
+              "label": {
+                "en": "Bean container empty",
+                "fr": "Bac à grains vide"
+              }
+            },
+            {
+              "value": "event-water-tank-empty",
+              "label": {
+                "en": "Water tank empty",
+                "fr": "Réservoir d'eau vide"
+              }
+            },
+            {
+              "value": "event-drip-tray-full",
+              "label": {
+                "en": "Drip tray full",
+                "fr": "Bac récolte-gouttes plein"
+              }
+            },
+            {
+              "value": "event-idos1-low",
+              "label": {
+                "en": "i-Dos 1 nearly empty",
+                "fr": "i-Dos 1 presque vide"
+              }
+            },
+            {
+              "value": "event-idos2-low",
+              "label": {
+                "en": "i-Dos 2 nearly empty",
+                "fr": "i-Dos 2 presque vide"
+              }
+            },
+            {
+              "value": "event-door-alarm-freezer",
+              "label": {
+                "en": "Freezer door alarm",
+                "fr": "Alarme porte congélateur"
+              }
+            },
+            {
+              "value": "event-door-alarm-refrigerator",
+              "label": {
+                "en": "Refrigerator door alarm",
+                "fr": "Alarme porte réfrigérateur"
+              }
+            },
+            {
+              "value": "event-temperature-alarm-freezer",
+              "label": {
+                "en": "Freezer temperature alarm",
+                "fr": "Alarme température congélateur"
+              }
+            },
+            {
+              "value": "event-empty-dust-box",
+              "label": {
+                "en": "Dust box full",
+                "fr": "Bac à poussière plein"
+              }
+            },
+            {
+              "value": "event-robot-stuck",
+              "label": {
+                "en": "Robot stuck",
+                "fr": "Robot bloqué"
+              }
+            },
+            {
+              "value": "event-docking-station-not-found",
+              "label": {
+                "en": "Docking station not found",
+                "fr": "Station de charge introuvable"
+              }
+            }
+          ]
+        }
+      ],
+      "variables": [
+        {
+          "key": "appliance",
+          "type": "string",
+          "label": {
+            "en": "Appliance",
+            "fr": "Appareil"
+          }
+        },
+        {
+          "key": "appliance_name",
+          "type": "string",
+          "label": {
+            "en": "Appliance name",
+            "fr": "Nom de l’appareil"
+          }
+        },
+        {
+          "key": "appliance_type",
+          "type": "string",
+          "label": {
+            "en": "Appliance type",
+            "fr": "Type d’appareil"
+          }
+        },
+        {
+          "key": "notification",
+          "type": "string",
+          "label": {
+            "en": "Notification",
+            "fr": "Notification"
+          }
+        },
+        {
+          "key": "notification_name",
+          "type": "string",
+          "label": {
+            "en": "Notification name",
+            "fr": "Libellé de la notification"
+          }
+        }
+      ]
+    }
+  ],
+  "scene_actions": [
+    {
+      "key": "start_program",
+      "label": {
+        "en": "Start the selected program",
+        "fr": "Démarrer le programme sélectionné"
+      },
+      "description": {
+        "en": "Runs the program already selected on the appliance. Remote start must be armed on it.",
+        "fr": "Lance le programme déjà sélectionné sur l’appareil. Le démarrage à distance doit y être activé."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "appliance",
+          "type": "select",
+          "label": {
+            "en": "Appliance",
+            "fr": "Appareil"
+          },
+          "description": {
+            "en": "The Home Connect appliance the action runs on.",
+            "fr": "L’appareil Home Connect sur lequel l’action s’applique."
+          },
+          "required": true,
+          "source": "devices"
+        }
+      ],
+      "outputs": [
+        {
+          "key": "program",
+          "type": "string",
+          "label": {
+            "en": "Program",
+            "fr": "Programme"
+          }
+        },
+        {
+          "key": "program_key",
+          "type": "string",
+          "label": {
+            "en": "Program key",
+            "fr": "Clé du programme"
+          }
+        }
+      ]
+    },
+    {
+      "key": "stop_program",
+      "label": {
+        "en": "Stop the running program",
+        "fr": "Arrêter le programme en cours"
+      },
+      "description": {
+        "en": "Aborts the program the appliance is running.",
+        "fr": "Interrompt le programme en cours sur l’appareil."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "appliance",
+          "type": "select",
+          "label": {
+            "en": "Appliance",
+            "fr": "Appareil"
+          },
+          "description": {
+            "en": "The Home Connect appliance the action runs on.",
+            "fr": "L’appareil Home Connect sur lequel l’action s’applique."
+          },
+          "required": true,
+          "source": "devices"
+        }
+      ]
+    },
+    {
+      "key": "pause_program",
+      "label": {
+        "en": "Pause the program",
+        "fr": "Mettre le programme en pause"
+      },
+      "description": {
+        "en": "Only the appliances that accept the Home Connect pause command.",
+        "fr": "Uniquement les appareils qui acceptent la commande pause de Home Connect."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "appliance",
+          "type": "select",
+          "label": {
+            "en": "Appliance",
+            "fr": "Appareil"
+          },
+          "description": {
+            "en": "The Home Connect appliance the action runs on.",
+            "fr": "L’appareil Home Connect sur lequel l’action s’applique."
+          },
+          "required": true,
+          "source": "devices"
+        }
+      ]
+    },
+    {
+      "key": "resume_program",
+      "label": {
+        "en": "Resume the program",
+        "fr": "Reprendre le programme"
+      },
+      "description": {
+        "en": "Restarts a program that was paused.",
+        "fr": "Relance un programme mis en pause."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "appliance",
+          "type": "select",
+          "label": {
+            "en": "Appliance",
+            "fr": "Appareil"
+          },
+          "description": {
+            "en": "The Home Connect appliance the action runs on.",
+            "fr": "L’appareil Home Connect sur lequel l’action s’applique."
+          },
+          "required": true,
+          "source": "devices"
+        }
+      ]
+    },
+    {
+      "key": "appliance_status",
+      "label": {
+        "en": "Read the appliance status",
+        "fr": "Lire l’état de l’appareil"
+      },
+      "description": {
+        "en": "Returns the state, the program and the remaining time, to use in the next actions of the scene.",
+        "fr": "Renvoie l’état, le programme et le temps restant, à réutiliser dans les actions suivantes de la scène."
+      },
+      "timeout_seconds": 15,
+      "fields": [
+        {
+          "key": "appliance",
+          "type": "select",
+          "label": {
+            "en": "Appliance",
+            "fr": "Appareil"
+          },
+          "description": {
+            "en": "The Home Connect appliance the action runs on.",
+            "fr": "L’appareil Home Connect sur lequel l’action s’applique."
+          },
+          "required": true,
+          "source": "devices"
+        }
+      ],
+      "outputs": [
+        {
+          "key": "state",
+          "type": "string",
+          "label": {
+            "en": "State",
+            "fr": "État"
+          }
+        },
+        {
+          "key": "state_label",
+          "type": "string",
+          "label": {
+            "en": "State (readable)",
+            "fr": "État (lisible)"
+          }
+        },
+        {
+          "key": "program",
+          "type": "string",
+          "label": {
+            "en": "Program",
+            "fr": "Programme"
+          }
+        },
+        {
+          "key": "running",
+          "type": "boolean",
+          "label": {
+            "en": "Program running",
+            "fr": "Programme en cours"
+          }
+        },
+        {
+          "key": "remaining_seconds",
+          "type": "number",
+          "label": {
+            "en": "Remaining time (s)",
+            "fr": "Temps restant (s)"
+          }
+        },
+        {
+          "key": "remaining_label",
+          "type": "string",
+          "label": {
+            "en": "Remaining time (readable)",
+            "fr": "Temps restant (lisible)"
+          }
+        },
+        {
+          "key": "progress",
+          "type": "number",
+          "label": {
+            "en": "Progress (%)",
+            "fr": "Progression (%)"
+          }
+        },
+        {
+          "key": "door",
+          "type": "string",
+          "label": {
+            "en": "Door",
+            "fr": "Porte"
+          }
+        },
+        {
+          "key": "connected",
+          "type": "boolean",
+          "label": {
+            "en": "Connected",
+            "fr": "Connecté"
+          }
+        },
+        {
+          "key": "summary",
+          "type": "string",
+          "label": {
+            "en": "Summary",
+            "fr": "Résumé"
+          }
+        }
+      ]
+    }
+  ],
+  "widgets": [
+    {
+      "key": "appliances",
+      "label": {
+        "en": "Home Connect",
+        "fr": "Home Connect"
+      },
+      "description": {
+        "en": "All your appliances and what they are doing, in one card.",
+        "fr": "Tous vos appareils et ce qu’ils font, en une carte."
+      },
+      "icon": "grid",
+      "settings": [
+        {
+          "key": "appliances",
+          "type": "multi_select",
+          "label": {
+            "en": "Appliances",
+            "fr": "Appareils"
+          },
+          "description": {
+            "en": "Leave empty to show every Home Connect appliance.",
+            "fr": "Laissez vide pour afficher tous les appareils Home Connect."
+          },
+          "source": "devices"
+        }
+      ]
+    },
+    {
+      "key": "appliance",
+      "label": {
+        "en": "Appliance",
+        "fr": "Appareil"
+      },
+      "description": {
+        "en": "One appliance: state, program, remaining time and controls.",
+        "fr": "Un appareil : état, programme, temps restant et commandes."
+      },
+      "icon": "box",
+      "settings": [
+        {
+          "key": "appliance",
+          "type": "select",
+          "label": {
+            "en": "Appliance",
+            "fr": "Appareil"
+          },
+          "required": true,
+          "source": "devices"
+        },
+        {
+          "key": "controls",
+          "type": "boolean",
+          "label": {
+            "en": "Show the start / stop buttons",
+            "fr": "Afficher les boutons démarrer / arrêter"
+          },
+          "description": {
+            "en": "Starting runs the program selected on the appliance; it needs remote start armed there.",
+            "fr": "Le démarrage lance le programme sélectionné sur l’appareil ; le démarrage à distance doit y être activé."
+          },
+          "default": true
+        }
+      ],
+      "action_timeout_seconds": 30
     }
   ]
 }

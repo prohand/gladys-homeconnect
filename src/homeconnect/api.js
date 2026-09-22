@@ -153,15 +153,20 @@ export class HomeConnectApi {
    * appliance (or in the Home Connect app), Gladys only pulls the trigger —
    * which is also the only thing the appliance allows without re-declaring
    * every option of every program.
+   *
+   * @returns {Promise<string>} the Home Connect key of the program started —
+   *   the scene action and the widget toast name it back to the user, and it
+   *   is already in hand here, so nobody has to spend a request re-reading it.
    */
   async startSelectedProgram(haId) {
     const selected = await this.getSelectedProgram(haId);
     if (!selected?.key) {
       throw new Error('No program selected on the appliance');
     }
-    return this.request('PUT', `${API_PATH}/${encodeURIComponent(haId)}/programs/active`, {
+    await this.request('PUT', `${API_PATH}/${encodeURIComponent(haId)}/programs/active`, {
       data: { key: selected.key, options: selected.options ?? [] },
     });
+    return selected.key;
   }
 
   /** Abort the running program. */

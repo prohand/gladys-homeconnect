@@ -24,6 +24,8 @@ import {
 } from './src/homeconnect/oauth.js';
 import { startEventStream } from './src/homeconnect/events.js';
 import { ApplianceRegistry } from './src/appliances.js';
+import { SceneBridge } from './src/scenes.js';
+import { WidgetBridge } from './src/widgets.js';
 import {
   createPendingState,
   matchesPendingState,
@@ -58,7 +60,21 @@ const api = new HomeConnectApi({
   },
 });
 
-const registry = new ApplianceRegistry({ gladys, api, getConfig: () => config });
+// The three of them know each other, which is why they are built in this
+// order and wired with arrows rather than references: the registry is the only
+// one that sees the Home Connect stream, and it is what the scene triggers and
+// the widget nudges are made of. The arrows below run long after this module
+// finished evaluating, so the bindings they close over are all in place.
+const registry = new ApplianceRegistry({
+  gladys,
+  api,
+  getConfig: () => config,
+  onApplianceEvent: (event, snapshot) => scenes.handleApplianceEvent(event, snapshot),
+  onApplianceChanged: () => widgets.nudge(),
+});
+
+const scenes = new SceneBridge({ gladys, api, registry, getConfig: () => config });
+const widgets = new WidgetBridge({ gladys, registry, api });
 
 // --- Discovery: Gladys asks for the list of devices --------------------------
 gladys.onScanRequest(async () => {
@@ -181,6 +197,15 @@ gladys.onAction('test_connection', async () => {
     fr: `Connexion réussie : ${appliances.length} appareil(s) — ${names}`,
   };
 });
+
+// --- Scenes and dashboard widgets (Gladys 5.1) -------------------------------
+//
+// Both are declared in the manifest and answered here: `scene_triggers` /
+// `scene_actions` extend the scene editor with what a Home Connect appliance
+// can announce and be asked to do, `widgets` put the account on the dashboard.
+// The handlers must be registered before connect(), like every other one.
+scenes.register();
+widgets.register();
 
 gladys.onAction('refresh_devices', async () => {
   const count = await registry.refresh();

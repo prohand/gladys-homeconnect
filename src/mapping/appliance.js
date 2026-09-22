@@ -274,8 +274,15 @@ export function buildStates(gladys, snapshot, models) {
 /**
  * Flatten a snapshot into a single `Home Connect key -> value` map, so the
  * decoding loop never has to care which endpoint a value came from.
+ *
+ * Exported because the widgets and the scene actions read the very same
+ * values from the very same snapshot, and a second flattening rule would be a
+ * second truth (see ./describe.js).
+ *
+ * @param {object} snapshot
+ * @returns {Map<string, unknown>}
  */
-function snapshotValues(snapshot) {
+export function snapshotValues(snapshot) {
   const values = new Map();
   for (const { key, value } of snapshot.settings ?? []) {
     values.set(key, value);
