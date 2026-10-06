@@ -49,6 +49,38 @@ let pendingOAuth = null;
 // Stop function of the Server-Sent-Events stream, while one is running.
 let stopEventStream = null;
 
+// The integration's own polling loop. Gladys only polls a device whose row
+// carries `should_poll: true`, a flag it reads once at creation: the devices
+// created before it would never get the polling safety net behind the event
+// stream. Every created device goes through registry.poll(), whose
+// isPollDue() keeps the reads to one per configured interval whichever path
+// asks.
+const POLL_LOOP_MS = 60 * 1000;
+let pollLoop = null;
+let pollLoopRunning = false;
+
+function startPollLoop() {
+  if (pollLoop) {
+    return;
+  }
+  pollLoop = setInterval(async () => {
+    if (pollLoopRunning || !hasCredentials(config) || !tokens.refresh_token) {
+      return;
+    }
+    pollLoopRunning = true;
+    try {
+      for (const device of gladys.devices ?? []) {
+        await registry
+          .poll(device)
+          .catch((err) => logger.warn(`Poll of ${device.external_id} failed: ${err.message}`));
+      }
+    } finally {
+      pollLoopRunning = false;
+    }
+  }, POLL_LOOP_MS);
+  pollLoop.unref?.();
+}
+
 const api = new HomeConnectApi({
   getConfig: () => config,
   getTokens: () => tokens,
@@ -228,6 +260,7 @@ gladys.onConfigUpdated(async (newConfig) => {
 
 // --- Connection lifecycle ----------------------------------------------------
 gladys.on('connected', async () => {
+  startPollLoop();
   try {
     rawConfig = (await gladys.getConfig()) ?? {};
     config = normalizeConfig(rawConfig);
@@ -387,6 +420,7 @@ async function reportStatus(connected, message) {
 // --- Graceful shutdown -------------------------------------------------------
 gladys.handleShutdown((signal) => {
   logger.info(`Received ${signal} -> graceful shutdown`);
+  clearInterval(pollLoop);
   stopStream();
 });
 

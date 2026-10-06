@@ -16,6 +16,10 @@ All notable changes to this integration are documented here. The format follows
 
 - Development dependencies updated to their latest versions (ESLint 10.12, Prettier 3.9.9, globals 17.13).
 
+### Fixed
+
+- The polling safety net behind the event stream runs again: devices are published with `should_poll: true`, without which Gladys never polls them, and an integration-owned loop polls the devices created before that flag. A missed event or reconnection window used to freeze a device until the next restart.
+
 ## [2.0.1] - 2026-09-22
 
 ### Fixed

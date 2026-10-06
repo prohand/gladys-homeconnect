@@ -55,8 +55,9 @@ src/widgets.js              WidgetBridge: dashboard widgets
   reconnected after 180 s of silence (keep-alives come every ~55 s) and with exponential backoff
   on errors. It stops on Gladys disconnection and restarts in `initialize()`.
 - **Home Connect quotas are strict**: polling is only a safety net (default 900 s), honoured by
-  the registry on top of the 60 s Gladys tick. Gladys only polls devices whose discovery payload
-  carries `should_poll: true` with an allowed `poll_frequency` (1 s–60 s in ms).
+  the registry on top of the 60 s Gladys tick. Devices carry `should_poll: true` with an allowed
+  `poll_frequency` (1 s–60 s in ms); Gladys reads the flag at creation only, so index.js also runs
+  its own one-minute loop over `gladys.devices` through the same `registry.poll()`.
 - **OAuth tokens live in the Gladys config**, outside `config_schema`, written with
   `gladys.setConfig()` (`persistTokens`). The OAuth `state` is also persisted, so a container
   restart during sign-in still validates the callback. Never log tokens or the client secret.

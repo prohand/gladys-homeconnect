@@ -107,6 +107,8 @@ test('buildDevice produces a Gladys discovery payload with stable external ids',
   // Gladys validates poll_frequency against its own enum of milliseconds, so
   // the device carries its slowest tick, not the interval configured in seconds.
   assert.equal(device.poll_frequency, GLADYS_POLL_TICK_MS);
+  // Without should_poll the core never schedules the device.
+  assert.equal(device.should_poll, true);
   assert.deepEqual(
     device.params.find((param) => param.name === 'haId'),
     { name: 'haId', value: DISHWASHER.haId },
