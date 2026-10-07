@@ -86,6 +86,8 @@ export class ApplianceRegistry {
      * @type {Map<string, {key: string, at: number}>}
      */
     this.publishedStates = new Map();
+    /** Tail of the event queue: the stream's events are applied one at a time. */
+    this.eventQueue = Promise.resolve();
     /**
      * haIds whose whole snapshot has been published while the Gladys device was
      * known to exist. States published before the user creates the device land
@@ -481,6 +483,25 @@ export class ApplianceRegistry {
   }
 
   // --- Event stream ----------------------------------------------------------
+
+  /**
+   * Apply an event of the stream after the ones received before it.
+   *
+   * The stream hands its events over without waiting, and `handleEvent` awaits
+   * the scene bridge and Gladys before it updates the snapshot: run side by side,
+   * a "Finished" right behind a "Run" could compare itself with a snapshot that
+   * had not seen the "Run" yet, and its state could reach Gladys first and be
+   * overwritten by the older one.
+   *
+   * @param {import('./homeconnect/events.js').HomeConnectEvent} event
+   * @returns {Promise<void>} Resolves once this event is applied; never rejects.
+   */
+  enqueueEvent(event) {
+    this.eventQueue = this.eventQueue
+      .then(() => this.handleEvent(event))
+      .catch((err) => logger.error(`Failed to apply an event of ${event.haId}`, err));
+    return this.eventQueue;
+  }
 
   /**
    * Apply one event of the Home Connect stream.

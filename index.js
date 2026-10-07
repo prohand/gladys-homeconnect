@@ -365,9 +365,7 @@ function startStream() {
     api,
     getConfig: () => config,
     onEvent: (event) => {
-      registry
-        .handleEvent(event)
-        .catch((err) => logger.error(`Failed to apply an event of ${event.haId}`, err));
+      registry.enqueueEvent(event);
     },
     onStatusChange: (connected, err) => {
       if (connected) {

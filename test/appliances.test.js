@@ -437,3 +437,45 @@ test('external ids round-trip back to the haId and the feature suffix', () => {
   assert.equal(haIdFromExternalId(device), DISHWASHER.haId);
   assert.equal(featureIdFromExternalId(device, `${device}:fridge-setpoint`), 'fridge-setpoint');
 });
+
+test('events of the stream are applied in the order they arrived', async () => {
+  const gladys = createFakeGladys();
+  const api = createFakeApi();
+  // A scene bridge slow on the first event only: run side by side, the older
+  // "Pause" would then reach Gladys after the newer "Finished".
+  let first = true;
+  const registry = new ApplianceRegistry({
+    gladys,
+    api,
+    getConfig: () => config,
+    onApplianceEvent: async () => {
+      if (first) {
+        first = false;
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+    },
+  });
+  await registry.refresh();
+
+  const base = { haId: DISHWASHER.haId, type: SSE_TYPES.STATUS, key: STATUSES.OPERATION_STATE };
+  registry.enqueueEvent({ ...base, value: OPERATION_STATE.PAUSE });
+  await registry.enqueueEvent({ ...base, value: OPERATION_STATE.FINISHED });
+
+  assert.equal(lastStateOf(gladys, 'operation-state').text, 'Finished');
+});
+
+test('a failing event does not stop the ones queued behind it', async () => {
+  const { gladys, registry } = await createRegistry();
+  registry.handleEvent = async function (event) {
+    if (event.value === 'boom') throw new Error('boom');
+    return ApplianceRegistry.prototype.handleEvent.call(this, event);
+  };
+  registry.enqueueEvent({ haId: DISHWASHER.haId, type: SSE_TYPES.STATUS, key: 'x', value: 'boom' });
+  await registry.enqueueEvent({
+    haId: DISHWASHER.haId,
+    type: SSE_TYPES.STATUS,
+    key: STATUSES.DOOR_STATE,
+    value: DOOR_STATE.OPEN,
+  });
+  assert.equal(lastStateOf(gladys, 'door').state, 0);
+});
