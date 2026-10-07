@@ -18,7 +18,9 @@
 // Two rules shape what follows:
 //   - ANYTHING LIVE IS A FEATURE. A tile bound to `device_feature` follows the
 //     published states over the core's real-time path, with no re-pull and no
-//     nudge: remaining time and progress are bound that way. Only what has no
+//     nudge: the remaining time is bound that way. The progress gauge is the
+//     exception, inline: the core draws a bound gauge without its unit, and
+//     every published state nudges the widget anyway. Only what has no
 //     feature (a sentence mixing state, program and time) is rendered as text.
 //   - READ AND TAP. The widget shows and offers a couple of buttons; the
 //     setpoints and switches stay in the core's device widgets, which already
@@ -322,16 +324,17 @@ export class WidgetBridge {
         icon: 'clock',
       });
     }
-    const progress = description.running
-      ? feature(OPTION_FEATURES[OPTIONS.PROGRAM_PROGRESS].id)
-      : null;
-    if (progress) {
+    // An inline value, not the device_feature: the core draws a device-bound
+    // gauge with no unit at all ("42" instead of "42 %"). Every published state
+    // nudges the widgets, so the inline value follows the program just as well.
+    if (description.running && description.progress !== null) {
       components.push({
         type: 'gauge',
         label: TEXTS.progress,
-        device_feature: progress,
+        value: Math.round(description.progress),
         min: 0,
         max: 100,
+        unit: '%',
       });
     }
 

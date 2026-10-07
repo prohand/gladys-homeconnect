@@ -101,7 +101,7 @@ test('an empty account renders an empty state, not an empty card', async () => {
   assert.equal(content.components[0].type, 'text');
 });
 
-test('the appliance card binds the moving numbers to their live features', async () => {
+test('the appliance card binds the remaining time, shows the progress with its unit', async () => {
   const { gladys } = await createWidgets();
 
   const content = await invoke(gladys, `widget:${WIDGETS.APPLIANCE}`, {
@@ -114,7 +114,10 @@ test('the appliance card binds the moving numbers to their live features', async
   const tile = content.components.find((component) => component.type === 'value');
   assert.equal(tile.device_feature, `${DISHWASHER_DEVICE}:remaining-time`);
   const gauge = content.components.find((component) => component.type === 'gauge');
-  assert.equal(gauge.device_feature, `${DISHWASHER_DEVICE}:program-progress`);
+  // Inline with '%': a device-bound gauge is drawn without any unit.
+  assert.equal(gauge.device_feature, undefined);
+  assert.equal(gauge.unit, '%');
+  assert.ok(Number.isFinite(gauge.value));
   const status = content.components.find((component) => component.type === 'status');
   assert.deepEqual(
     status.items.map((item) => item.value),
