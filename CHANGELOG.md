@@ -6,6 +6,8 @@ All notable changes to this integration are documented here. The format follows
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-10-08
+
 ### Changed
 
 - The polling safety net spends far less of the Home Connect quota (1,000 requests a day): while the event stream is healthy, a poll reads the statuses only (1 request instead of 5) and re-reads the appliance in full only when they moved without an event. Every reconnection of the stream re-reads the account once. The request budget is documented.
@@ -94,7 +96,8 @@ First public release.
 - Fill in device values on the first connection
 - Fix door polarity, nameless features, empty alerts; default to French
 
-[Unreleased]: https://github.com/prohand/gladys-homeconnect/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/prohand/gladys-homeconnect/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/prohand/gladys-homeconnect/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/prohand/gladys-homeconnect/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/prohand/gladys-homeconnect/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/prohand/gladys-homeconnect/compare/v2.0.0...v2.0.1
