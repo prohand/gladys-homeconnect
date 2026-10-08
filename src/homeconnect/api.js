@@ -23,6 +23,11 @@ const logger = createLogger({ name: 'homeconnect-api' });
 // just under the wire still completes with a valid token.
 const TOKEN_EXPIRY_MARGIN_MS = 120_000;
 
+// A rotated token pair Gladys failed to store is retried at most this often,
+// from the next request on: every request would otherwise retry, and log, a
+// write the host keeps refusing.
+const PERSIST_RETRY_MS = 60_000;
+
 /** Thrown when Home Connect answers 429; carries the cooldown it asked for. */
 export class RateLimitedError extends Error {
   constructor(retryAfterMs) {
@@ -52,7 +57,10 @@ export class HomeConnectApi {
    * @param {() => object} options.getConfig returns the current normalized config
    * @param {() => { access_token?: string, refresh_token?: string, token_expires_at?: number }}
    *   options.getTokens returns the currently stored token triplet
-   * @param {(tokens: object) => Promise<void>} options.persistTokens stores a rotated token pair
+   * @param {(tokens: object) => Promise<void>} options.persistTokens stores a rotated token
+   *   pair. It must update the copy `getTokens` reads BEFORE any write that can
+   *   fail: a failed write is retried later, the token in memory is what keeps
+   *   working meanwhile.
    */
   constructor({ getConfig, getTokens, persistTokens }) {
     this.getConfig = getConfig;
@@ -62,6 +70,9 @@ export class HomeConnectApi {
     // token must not each burn a refresh token (Home Connect rotates it).
     this.refreshPromise = null;
     this.rateLimitedUntil = 0;
+    // A refreshed pair Gladys could not store yet, and when to try again.
+    this.unpersistedTokens = null;
+    this.persistRetryAt = 0;
   }
 
   /** @returns {boolean} whether a token pair is stored at all. */
@@ -195,6 +206,7 @@ export class HomeConnectApi {
    */
   async request(method, path, body, allowRetry = true) {
     this.assertNotRateLimited();
+    await this.retryTokenPersistence();
 
     const config = this.getConfig();
     const accessToken = await this.getAccessToken();
@@ -284,8 +296,48 @@ export class HomeConnectApi {
     }
     logger.info('Refreshing the Home Connect access token');
     const tokens = await refreshTokens(this.getConfig(), refreshToken);
-    await this.persistTokens(tokens);
+    // The new pair is valid whether or not Gladys stores it: failing the
+    // request now would throw away a working token over a config write. Home
+    // Connect rotates the refresh token, though, so a pair never stored is lost
+    // on the next restart — hence the retry.
+    await this.storeTokens(tokens);
     return tokens.access_token;
+  }
+
+  /** Persist a token pair; on failure keep it for `retryTokenPersistence()`. */
+  async storeTokens(tokens) {
+    try {
+      await this.persistTokens(tokens);
+      this.unpersistedTokens = null;
+    } catch (err) {
+      // The message only: the error of a config write never carries the tokens,
+      // and nothing here may log them.
+      logger.error(
+        `Could not store the refreshed Home Connect tokens, keeping them in memory and retrying: ${err.message}`,
+      );
+      this.unpersistedTokens = tokens;
+      this.persistRetryAt = Date.now() + PERSIST_RETRY_MS;
+    }
+  }
+
+  /**
+   * Store again a token pair whose first write failed. Never throws: the
+   * request it runs in front of does not depend on it.
+   */
+  async retryTokenPersistence() {
+    const pending = this.unpersistedTokens;
+    if (!pending || Date.now() < this.persistRetryAt) {
+      return;
+    }
+    // Only while that pair is still the one in use: a new authorization (or a
+    // newer refresh) since then has its own write, and replaying the old pair
+    // over it would store a revoked refresh token.
+    if (this.getTokens().refresh_token !== pending.refresh_token) {
+      this.unpersistedTokens = null;
+      return;
+    }
+    logger.info('Retrying to store the refreshed Home Connect tokens');
+    await this.storeTokens(pending);
   }
 }
 
