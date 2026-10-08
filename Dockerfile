@@ -11,7 +11,7 @@
 # configuration (setConfig), so the container is entirely disposable.
 # -----------------------------------------------------------------------------
 
-FROM node:26-alpine
+FROM node:24-alpine
 
 # dumb-init: handles signals (SIGTERM) correctly for a graceful shutdown.
 RUN apk add --no-cache dumb-init
