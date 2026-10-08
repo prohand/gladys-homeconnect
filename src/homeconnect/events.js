@@ -50,9 +50,18 @@ const RECONNECT_MAX_DELAY_MS = 300_000;
  * @param {() => object} options.getConfig
  * @param {(event: HomeConnectEvent) => void} options.onEvent
  * @param {(connected: boolean, error?: Error) => void} [options.onStatusChange]
+ * @param {() => void} [options.onActivity] called on every sign of life of the
+ *   connection (KEEP-ALIVE included, which `onEvent` never sees): the registry
+ *   uses it to tell a healthy stream from a silent one.
  * @returns {() => void} stop function; call it on disconnection / shutdown
  */
-export function startEventStream({ api, getConfig, onEvent, onStatusChange = () => {} }) {
+export function startEventStream({
+  api,
+  getConfig,
+  onEvent,
+  onStatusChange = () => {},
+  onActivity = () => {},
+}) {
   let stopped = false;
   let controller = null;
   let retryTimer = null;
@@ -74,8 +83,17 @@ export function startEventStream({ api, getConfig, onEvent, onStatusChange = () 
     }
     controller = new AbortController();
     try {
-      await consumeStream({ api, getConfig, onEvent, signal: controller.signal, onStatusChange });
+      await consumeStream({
+        api,
+        getConfig,
+        onEvent,
+        signal: controller.signal,
+        onStatusChange,
+        onActivity,
+      });
       // A clean end-of-stream is normal: Home Connect closes it periodically.
+      // Still a disconnection: what happens until the reconnection is unseen.
+      onStatusChange(false);
       attempt = 0;
       scheduleReconnect(RECONNECT_BASE_DELAY_MS);
     } catch (err) {
@@ -118,23 +136,47 @@ export function startEventStream({ api, getConfig, onEvent, onStatusChange = () 
  * Run ONE connection until the server closes it (or the watchdog fires).
  * Extracted from the retry loop so it stays testable with a fake fetch.
  */
-async function consumeStream({ api, getConfig, onEvent, signal, onStatusChange }) {
+async function consumeStream({ api, getConfig, onEvent, signal, onStatusChange, onActivity }) {
   const config = getConfig();
   const accessToken = await api.getAccessToken();
 
-  const response = await fetch(new URL(`${API_PATH}/events`, config.base_url), {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Accept: 'text/event-stream',
-      'Accept-Language': config.language,
-      'Cache-Control': 'no-cache',
-    },
-    signal,
-  });
+  // The idle watchdog below only exists once the answer is in: a server that
+  // accepts the connection and never answers would otherwise hang this request
+  // — and with it the real-time channel — forever. The timeout covers the
+  // headers only, so it is cleared as soon as they arrive: the body of this
+  // response is meant to last for hours.
+  const connectTimeoutMs = config.request_timeout_ms;
+  const connectTimeout = new AbortController();
+  const connectTimer = setTimeout(() => {
+    connectTimeout.abort(
+      new Error(`Event stream connection timed out after ${Math.round(connectTimeoutMs / 1000)}s`),
+    );
+  }, connectTimeoutMs);
+  connectTimer.unref?.();
+
+  let response;
+  try {
+    response = await fetch(new URL(`${API_PATH}/events`, config.base_url), {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'text/event-stream',
+        'Accept-Language': config.language,
+        'Cache-Control': 'no-cache',
+      },
+      signal: AbortSignal.any([signal, connectTimeout.signal]),
+    });
+  } finally {
+    clearTimeout(connectTimer);
+  }
 
   if (response.status === 429) {
-    throw new RateLimitedError(parseRetryAfter(response.headers.get('Retry-After')));
+    const retryAfterMs = parseRetryAfter(response.headers.get('Retry-After'));
+    // The quota is per client and account, not per endpoint: the REST calls
+    // would be refused just the same, so they observe the same cooldown
+    // instead of spending error calls finding it out.
+    api.rateLimitedUntil = Math.max(api.rateLimitedUntil ?? 0, Date.now() + retryAfterMs);
+    throw new RateLimitedError(retryAfterMs);
   }
   if (response.status === 401) {
     // Force a refresh so the next attempt starts from a fresh token.
@@ -147,6 +189,7 @@ async function consumeStream({ api, getConfig, onEvent, signal, onStatusChange }
 
   logger.info('Event stream connected');
   onStatusChange(true);
+  onActivity();
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -172,6 +215,7 @@ async function consumeStream({ api, getConfig, onEvent, signal, onStatusChange }
         break;
       }
       armWatchdog();
+      onActivity();
       buffer += decoder.decode(value, { stream: true });
 
       // SSE frames are separated by a blank line; \r\n is legal too.

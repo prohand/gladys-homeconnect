@@ -30,6 +30,15 @@ export const DEFAULT_CONFIG = {
   use_simulator: false,
 };
 
+// Bounds of the safety-net interval, in seconds (mirrored in the manifest).
+// Home Connect allows 1,000 requests a day per client and account. A full read
+// of an appliance costs five of them, which is what every poll spends while the
+// event stream is down: 480 a day per appliance at 900 s, but 3,600 at the
+// 120 s an older floor allowed — one appliance alone would exhaust the day on
+// polling, leaving nothing for the commands.
+export const MIN_POLL_FREQUENCY = 900;
+export const MAX_POLL_FREQUENCY = 3600;
+
 const SUPPORTED_LANGUAGES = new Set(['en', 'fr']);
 
 // Gladys stores `poll_frequency` as an ENUM of milliseconds
@@ -55,7 +64,11 @@ export function normalizeConfig(raw = {}) {
     client_secret: String(raw.client_secret ?? '').trim(),
     scope: String(raw.scope || DEFAULT_CONFIG.scope).trim(),
     language,
-    poll_frequency: clamp(Number(raw.poll_frequency ?? DEFAULT_CONFIG.poll_frequency), 120, 3600),
+    poll_frequency: clamp(
+      Number(raw.poll_frequency ?? DEFAULT_CONFIG.poll_frequency),
+      MIN_POLL_FREQUENCY,
+      MAX_POLL_FREQUENCY,
+    ),
     use_simulator: useSimulator,
     // Derived, never stored: the simulator speaks the exact same API on another
     // host, which is how you develop without owning a 900 € dishwasher.

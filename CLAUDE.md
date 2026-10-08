@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A Gladys Assistant **external integration** (Node 20+, ESM, no build step, one runtime
+A Gladys Assistant **external integration** (Node 22+, ESM, no build step, one runtime
 dependency: `@gladysassistant/integration-sdk`) that brings every appliance reporting to
 [Home Connect](https://www.home-connect.com/) into Gladys: Bosch, Siemens, Neff, Gaggenau, Balay,
 Constructa, Profilo, Thermador. It reads states, receives changes in real time through the Home
@@ -40,6 +40,7 @@ src/homeconnect/constants.js API paths, SSE frame types
 src/mapping/catalog.js      Home Connect dotted key -> Gladys feature (THE place to add support)
 src/mapping/appliance.js    one appliance -> discovery payload, states, commands
 src/mapping/describe.js     readable texts for enums / programs
+src/startup.js              initialize(): event stream first, account read retried with backoff
 src/appliances.js           ApplianceRegistry: account, snapshots, polls, setValue, events
 src/scenes.js               SceneBridge: triggers from events, scene actions
 src/widgets.js              WidgetBridge: dashboard widgets

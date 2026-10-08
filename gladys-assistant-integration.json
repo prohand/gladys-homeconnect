@@ -127,7 +127,7 @@
       },
       "required": false,
       "default": 900,
-      "min": 120,
+      "min": 900,
       "max": 3600
     },
     {
