@@ -224,7 +224,7 @@ therefore only becomes visible once a release ships the new tag URL.
 - **Quotas.** Home Connect enforces a request quota. Discovery reads a handful of
   endpoints per appliance and caches the constraints for good; polling reads one
   appliance at a time, not the whole account.
-- Requires **Node.js ≥ 20** (global `fetch`, web streams); the only runtime
+- Requires **Node.js ≥ 22** (global `fetch`, web streams); the only runtime
   dependency is the Gladys SDK.
 
 ## License
