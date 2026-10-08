@@ -6,9 +6,26 @@ All notable changes to this integration are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- The polling safety net spends far less of the Home Connect quota (1,000 requests a day): while the event stream is healthy, a poll reads the statuses only (1 request instead of 5) and re-reads the appliance in full only when they moved without an event. Every reconnection of the stream re-reads the account once. The request budget is documented.
+- The refresh interval can no longer be set below 900 s (15 minutes, the default): a lower value would exhaust the daily quota on polling alone. Stored lower values are raised to 900 s.
+- Requires Node.js 22 or later.
+
+### Fixed
+
+- When the Home Connect account cannot be read at startup (network not up yet), the real-time event stream starts anyway and the read is retried after 1, 5, then every 15 minutes, instead of waiting for the configuration to be saved again.
+- An appliance is no longer read twice in parallel when Gladys' poll and the integration's own loop tick together.
+- The event stream connection times out when Home Connect does not answer, instead of hanging forever; a rate limit on the stream now also pauses the REST calls.
+- A refreshed token that Gladys fails to store no longer fails the request: it is kept in memory and stored again on a later request.
+- An unhandled promise rejection is logged instead of stopping the integration.
+
 ## [2.2.0] - 2026-10-07
 
-- Maintenance release, no functional change.
+### Fixed
+
+- The dashboard widget shows the program progress with its unit (%).
+- Apply the events of the stream in the order they arrived.
 
 ## [2.1.0] - 2026-10-06
 

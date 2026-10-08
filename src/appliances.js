@@ -39,6 +39,19 @@ const REDISCOVERY_DEBOUNCE_MS = 5_000;
 // Slack allowed when comparing a Gladys tick to the configured interval.
 const POLL_TICK_TOLERANCE_MS = 1_000;
 
+// The event stream counts as healthy while it is connected and has said
+// something (an event, or the KEEP-ALIVE Home Connect sends every ~55 s) within
+// this window — the same three minutes after which events.js drops a silent
+// connection. While it is, the safety-net poll only checks the statuses (one
+// call) instead of re-reading the whole appliance (five).
+const STREAM_HEALTHY_MS = 180_000;
+
+// Two stream reconnections closer than this share one full re-read of the
+// account: a flapping network must not turn every reconnection into a read of
+// every appliance, and the status check of the next poll still catches what a
+// short gap hid.
+const STREAM_GAP_REREAD_MIN_MS = 5 * 60 * 1_000;
+
 // How long a published value stays "already said" before it is sent again.
 //
 // Gladys times every feature: past `DEVICE_STATE_NUMBER_OF_HOURS_BEFORE_STATE_IS_OUTDATED`
@@ -103,6 +116,12 @@ export class ApplianceRegistry {
      * @type {number|null}
      */
     this.loadedAt = null;
+    /**
+     * When the event stream last proved it was alive (connection, event or
+     * keep-alive), or `null` while it is down. See `isStreamHealthy()`.
+     * @type {number|null}
+     */
+    this.streamAliveAt = null;
   }
 
   /** Every appliance as a Gladys discovery payload (used by onScanRequest). */
@@ -156,7 +175,17 @@ export class ApplianceRegistry {
    */
   async refreshAppliance(appliance) {
     const previous = this.appliances.get(appliance.haId);
-    const snapshot = await this.fetchSnapshot(appliance, previous?.snapshot?.constraints);
+    // Claimed before the read, like in poll(): a tick arriving while a
+    // discovery is reading this appliance must not read it a second time.
+    const previousPollAt = this.lastPollAt.get(appliance.haId);
+    this.lastPollAt.set(appliance.haId, Date.now());
+    let snapshot;
+    try {
+      snapshot = await this.fetchSnapshot(appliance, previous?.snapshot?.constraints);
+    } catch (err) {
+      this.restorePollClock(appliance.haId, previousPollAt);
+      throw err;
+    }
     const models = buildFeatureModels(snapshot);
 
     // Two indexes, because the two hot paths ask different questions: the event
@@ -457,12 +486,90 @@ export class ApplianceRegistry {
       await this.publishSnapshotStates(haId, { force });
       return;
     }
-    // One call for the envelope (name, connected flag), not the whole account:
-    // Gladys polls each device on its own timer and the quota is shared.
-    const envelope = await this.api.getAppliance(haId);
-    await this.refreshAppliance({ ...envelope, haId });
+
+    // Claim the slot BEFORE reading: Gladys' onPoll and the integration's own
+    // loop both land here, and a clock only moved once the read is over let the
+    // second caller read the same appliance in parallel, for the same quota. A
+    // failed read gives the slot back, so the next tick tries again.
+    const previousPollAt = this.lastPollAt.get(haId);
+    this.lastPollAt.set(haId, Date.now());
+    try {
+      if (this.isStreamHealthy() && known.snapshot.connected) {
+        if (await this.statusesMatchSnapshot(haId)) {
+          logger.debug(`${haId}: event stream healthy and statuses unchanged, no full read`);
+          await this.publishSnapshotStates(haId, { force });
+          return;
+        }
+        logger.info(`${haId}: the statuses moved without an event, re-reading the appliance`);
+      }
+      // One call for the envelope (name, connected flag), not the whole account:
+      // Gladys polls each device on its own timer and the quota is shared.
+      const envelope = await this.api.getAppliance(haId);
+      await this.refreshAppliance({ ...envelope, haId });
+    } catch (err) {
+      this.restorePollClock(haId, previousPollAt);
+      throw err;
+    }
     await this.publishTransports();
     await this.publishSnapshotStates(haId, { force });
+  }
+
+  /**
+   * The light version of the safety net: one status read, compared with what
+   * the event stream already told us. Equal means the stream missed nothing
+   * that matters and the four other reads of a full refresh would be spent for
+   * nothing; different (or unreadable) means it did, and the caller reads the
+   * appliance in full.
+   *
+   * @param {string} haId
+   * @returns {Promise<boolean>}
+   */
+  async statusesMatchSnapshot(haId) {
+    const snapshot = this.appliances.get(haId)?.snapshot;
+    let statuses;
+    try {
+      statuses = await this.api.getStatuses(haId);
+    } catch (err) {
+      if (err instanceof RateLimitedError || err instanceof ReauthorizationRequiredError) {
+        throw err;
+      }
+      logger.debug(`Could not check the status of ${haId}: ${err.message}`);
+      return false;
+    }
+    return statuses.every(({ key, value }) =>
+      snapshot?.statuses?.some((known) => known.key === key && known.value === value),
+    );
+  }
+
+  /**
+   * Give back a polling slot claimed for a read that failed.
+   * @param {string} haId
+   * @param {number|undefined} previous the clock before the claim
+   */
+  restorePollClock(haId, previous) {
+    if (previous === undefined) {
+      this.lastPollAt.delete(haId);
+    } else {
+      this.lastPollAt.set(haId, previous);
+    }
+  }
+
+  /** The event stream connected, or delivered something (event or keep-alive). */
+  markStreamAlive() {
+    this.streamAliveAt = Date.now();
+  }
+
+  /** The event stream is down (closed, failed, stopped). */
+  markStreamDown() {
+    this.streamAliveAt = null;
+  }
+
+  /**
+   * True while the event stream is connected and spoke recently: what it
+   * delivers is then the truth, and the poll only has to check it.
+   */
+  isStreamHealthy() {
+    return this.streamAliveAt !== null && Date.now() - this.streamAliveAt < STREAM_HEALTHY_MS;
   }
 
   /**
@@ -617,18 +724,18 @@ export class ApplianceRegistry {
 
   /**
    * The event stream just came back. Anything that changed while it was down
-   * was never delivered, so the snapshots may be stale.
+   * was never delivered, so the snapshots may be stale: read the account in
+   * full, once — the status-only poll that runs while the stream is healthy
+   * would not see a program or an option that changed during the gap.
    *
-   * Home Connect closes the stream on its own about once a day and the
-   * reconnection is immediate, so this must not turn every cycle into a full
-   * account read: the appliances read within the configured interval are
-   * considered fresh enough — that interval is exactly the "how stale may a
-   * value be" knob the user set.
+   * Home Connect closes the stream on its own about once a day, so this costs
+   * one full read a day. Only a reconnection right behind a full read is
+   * skipped (`STREAM_GAP_REREAD_MIN_MS`), so a flapping network cannot turn
+   * every reconnection into a read of every appliance.
    */
   async refreshAfterStreamGap() {
-    const stale = [...this.appliances.keys()].some((haId) => this.isPollDue(haId));
-    if (this.appliances.size > 0 && !stale) {
-      logger.debug('Event stream back, the appliances were read recently enough');
+    if (this.loadedAt !== null && Date.now() - this.loadedAt < STREAM_GAP_REREAD_MIN_MS) {
+      logger.debug('Event stream back, the account was read in full moments ago');
       return;
     }
     logger.info('Event stream back after a gap, re-reading the appliances');

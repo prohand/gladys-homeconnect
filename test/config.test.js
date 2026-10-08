@@ -14,19 +14,21 @@ test('normalizeConfig applies the defaults on an empty config', () => {
 test('normalizeConfig forces the types coming from the form', () => {
   const config = normalizeConfig({
     client_id: '  abc  ',
-    poll_frequency: '600',
+    poll_frequency: '1200',
     use_simulator: 'true',
   });
   assert.equal(config.client_id, 'abc');
-  assert.equal(config.poll_frequency, 600);
+  assert.equal(config.poll_frequency, 1200);
   assert.equal(config.use_simulator, true);
   assert.equal(config.base_url, SIMULATOR_BASE_URL);
 });
 
 test('normalizeConfig clamps the polling interval into the manifest bounds', () => {
-  assert.equal(normalizeConfig({ poll_frequency: 5 }).poll_frequency, 120);
+  assert.equal(normalizeConfig({ poll_frequency: 5 }).poll_frequency, 900);
+  // The 120 s an older floor allowed is raised to the new one, not kept.
+  assert.equal(normalizeConfig({ poll_frequency: 120 }).poll_frequency, 900);
   assert.equal(normalizeConfig({ poll_frequency: 99999 }).poll_frequency, 3600);
-  assert.equal(normalizeConfig({ poll_frequency: 'nonsense' }).poll_frequency, 120);
+  assert.equal(normalizeConfig({ poll_frequency: 'nonsense' }).poll_frequency, 900);
 });
 
 test('normalizeConfig falls back to the default language on an unknown one', () => {

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { DEFAULT_CONFIG } from '../src/config.js';
+import { DEFAULT_CONFIG, MAX_POLL_FREQUENCY, MIN_POLL_FREQUENCY } from '../src/config.js';
 import { SCENE_ACTIONS, SCENE_TRIGGERS } from '../src/scenes.js';
 import { WIDGETS } from '../src/widgets.js';
 import { EVENT_FEATURES } from '../src/mapping/catalog.js';
@@ -69,8 +69,10 @@ test('the manifest defaults match the code defaults', () => {
 });
 
 test('the polling bounds of the manifest are the ones the code clamps to', () => {
-  assert.equal(fieldsByKey.get('poll_frequency').min, 120);
-  assert.equal(fieldsByKey.get('poll_frequency').max, 3600);
+  assert.equal(fieldsByKey.get('poll_frequency').min, MIN_POLL_FREQUENCY);
+  // Below 900 s a full read every interval eats the Home Connect daily quota.
+  assert.ok(MIN_POLL_FREQUENCY >= 900);
+  assert.equal(fieldsByKey.get('poll_frequency').max, MAX_POLL_FREQUENCY);
 });
 
 test('every declared action has a handler-friendly key and a timeout', () => {

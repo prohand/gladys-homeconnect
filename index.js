@@ -16,7 +16,7 @@
 
 import { GladysIntegration, logger } from '@gladysassistant/integration-sdk';
 import { hasCredentials, normalizeConfig, readTokens } from './src/config.js';
-import { HomeConnectApi, RateLimitedError } from './src/homeconnect/api.js';
+import { HomeConnectApi } from './src/homeconnect/api.js';
 import {
   ReauthorizationRequiredError,
   buildAuthorizeUrl,
@@ -24,6 +24,7 @@ import {
 } from './src/homeconnect/oauth.js';
 import { startEventStream } from './src/homeconnect/events.js';
 import { ApplianceRegistry } from './src/appliances.js';
+import { createStartup } from './src/startup.js';
 import { SceneBridge } from './src/scenes.js';
 import { WidgetBridge } from './src/widgets.js';
 import {
@@ -103,6 +104,15 @@ const registry = new ApplianceRegistry({
   getConfig: () => config,
   onApplianceEvent: (event, snapshot) => scenes.handleApplianceEvent(event, snapshot),
   onApplianceChanged: () => widgets.nudge(),
+});
+
+const startup = createStartup({
+  registry,
+  api,
+  getConfig: () => config,
+  startStream,
+  stopStream,
+  reportStatus,
 });
 
 const scenes = new SceneBridge({ gladys, api, registry, getConfig: () => config });
@@ -276,60 +286,17 @@ gladys.on('connected', async () => {
 });
 
 gladys.on('disconnected', () => {
+  startup.cancelRetry();
   stopStream();
 });
 
 /**
- * (Re)build everything that depends on the configuration: read the account,
- * publish the devices, and hold the event stream open.
- *
- * Every failure mode ends in a message the user can act on, because a cloud
- * integration that is RUNNING but silently unauthorized is the worst possible
- * state to leave someone in.
+ * (Re)build everything that depends on the configuration. The account read is
+ * retried on its own when it fails (see src/startup.js), and the event stream
+ * is held open meanwhile.
  */
-async function initialize() {
-  stopStream();
-
-  if (!hasCredentials(config)) {
-    await reportStatus(false, {
-      en: 'Enter your Home Connect Client ID and Client Secret.',
-      fr: 'Renseignez vos Client ID et Client Secret Home Connect.',
-    });
-    return;
-  }
-
-  if (!api.isAuthorized()) {
-    await reportStatus(false, {
-      en: 'Click Connect to link your Home Connect account.',
-      fr: 'Cliquez sur Connecter pour lier votre compte Home Connect.',
-    });
-    return;
-  }
-
-  try {
-    const count = await registry.refresh();
-    startStream();
-    await reportStatus(true);
-    logger.info(`Home Connect ready: ${count} appliance(s) published`);
-  } catch (err) {
-    if (err instanceof ReauthorizationRequiredError) {
-      await reportStatus(false, {
-        en: 'Home Connect authorization expired, click Connect again.',
-        fr: 'Autorisation Home Connect expirée, cliquez de nouveau sur Connecter.',
-      });
-      return;
-    }
-    if (err instanceof RateLimitedError) {
-      // Not broken, just throttled: say so and let the stream keep working.
-      startStream();
-      await reportStatus(false, {
-        en: 'Home Connect rate limit reached, retrying shortly.',
-        fr: 'Quota Home Connect atteint, nouvelle tentative sous peu.',
-      });
-      return;
-    }
-    throw err;
-  }
+function initialize() {
+  return startup.initialize();
 }
 
 /**
@@ -358,8 +325,9 @@ function scheduleInitialize() {
 
 function startStream() {
   stopStream();
-  // The first connection follows the full read `initialize()` just did; only the
-  // ones after it can have left a gap in what we know.
+  // The first connection follows the full read `initialize()` just did (or the
+  // retry of a failed one is already armed); only the ones after it can have
+  // left a gap in what we know.
   let everConnected = false;
   stopEventStream = startEventStream({
     api,
@@ -367,6 +335,9 @@ function startStream() {
     onEvent: (event) => {
       registry.enqueueEvent(event);
     },
+    // Every frame, keep-alives included: while the stream speaks, the polling
+    // safety net only checks the statuses instead of re-reading everything.
+    onActivity: () => registry.markStreamAlive(),
     onStatusChange: (connected, err) => {
       if (connected) {
         if (everConnected) {
@@ -377,6 +348,7 @@ function startStream() {
         everConnected = true;
         return;
       }
+      registry.markStreamDown();
       if (err instanceof ReauthorizationRequiredError) {
         reportStatus(false, {
           en: 'Home Connect authorization expired, click Connect again.',
@@ -394,6 +366,7 @@ function stopStream() {
     logger.error('Failed to stop the event stream', err);
   }
   stopEventStream = null;
+  registry.markStreamDown();
 }
 
 /** Store off-schema config keys and keep the local copy in sync. */
@@ -419,7 +392,19 @@ async function reportStatus(connected, message) {
 gladys.handleShutdown((signal) => {
   logger.info(`Received ${signal} -> graceful shutdown`);
   clearInterval(pollLoop);
+  startup.cancelRetry();
   stopStream();
+});
+
+// --- Last-resort safety net --------------------------------------------------
+//
+// Since Node 15 an unhandled rejection kills the process. Every path here is
+// meant to catch its own errors, but a promise forgotten in a timer callback
+// must not take the whole integration — and the event stream with it — down
+// for a log line: log it, loudly, and keep running. A synchronous exception is
+// left alone on purpose: it may leave state half-built, and a restart is safer.
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled promise rejection', reason);
 });
 
 // --- Startup -----------------------------------------------------------------

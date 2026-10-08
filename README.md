@@ -93,9 +93,14 @@ the appliance itself — reach Gladys in about a second. Unlike a webhook relay,
 that stream is authenticated, ordered and complete, so its values are applied
 directly rather than used as a mere refresh trigger.
 
-Polling stays armed behind it (`poll_frequency`, default 900 s) because Home
-Connect closes the stream roughly once a day, and a reconnection that lands badly
-must not silently freeze every device.
+Polling stays armed behind it (`poll_frequency`, default and minimum 900 s)
+because Home Connect closes the stream roughly once a day, and a reconnection
+that lands badly must not silently freeze every device. While the stream is
+healthy (connected, and a frame — keep-alives included — within the last three
+minutes) a poll only reads the statuses and compares them with what the stream
+said: one request instead of five, and a full read only when they differ. Every
+reconnection of the stream triggers one full read of the account, since the
+status check would not see a program changed during the gap.
 
 Gladys stores a device's `poll_frequency` as an enum of milliseconds whose
 slowest value is one minute, and rejects anything else (`invalid poll
@@ -110,6 +115,7 @@ so the quota-facing behaviour is the one the user asked for.
 ├─ index.js                          # SDK wiring: handlers, OAuth, lifecycle
 ├─ src/
 │  ├─ appliances.js                  # registry: discovery, events, commands, polling
+│  ├─ startup.js                     # first account read, event stream, retry with backoff
 │  ├─ widgets.js                     # dashboard widgets: contents and buttons
 │  ├─ scenes.js                      # scene triggers and scene actions
 │  ├─ config.js                      # config defaults + normalization
@@ -221,9 +227,11 @@ therefore only becomes visible once a release ships the new tag URL.
   does not pick one. That is the only start the appliances accept without
   re-declaring every option, and it requires _remote start_ to be armed on the
   appliance.
-- **Quotas.** Home Connect enforces a request quota. Discovery reads a handful of
-  endpoints per appliance and caches the constraints for good; polling reads one
-  appliance at a time, not the whole account.
+- **Quotas.** Home Connect allows 1,000 requests a day and 50 a minute per
+  client and account. Discovery reads a handful of endpoints per appliance and
+  caches the constraints for good; polling reads one appliance at a time, not
+  the whole account, and only its statuses while the event stream is healthy
+  (the budget is detailed in `docs/en.md`).
 - Requires **Node.js ≥ 22** (global `fetch`, web streams); the only runtime
   dependency is the Gladys SDK.
 

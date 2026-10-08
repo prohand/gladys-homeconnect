@@ -413,23 +413,101 @@ test('polling an appliance gone from the account does not re-read it every tick'
   );
 });
 
-test('a stream reconnection re-reads the account only once the values are stale', async () => {
+test('a stream reconnection re-reads the whole account once', async () => {
   const { api, registry } = await createRegistry();
   api.calls.length = 0;
 
-  // The daily clean cycle of the stream reconnects right away: nothing to re-read.
+  // Right behind a full read (a flapping network): nothing to re-read.
   await registry.refreshAfterStreamGap();
   assert.equal(api.calls.filter(([method]) => method === 'getAppliances').length, 0);
 
-  for (const haId of registry.appliances.keys()) {
-    registry.lastPollAt.set(haId, Date.now() - config.poll_frequency * 1000);
-  }
+  // A real gap, well inside the polling interval: the status-only poll of a
+  // healthy stream would never see a program changed meanwhile, so read it all.
+  registry.loadedAt = Date.now() - 6 * 60 * 1000;
   await registry.refreshAfterStreamGap();
   assert.equal(
     api.calls.filter(([method]) => method === 'getAppliances').length,
     1,
-    'a real gap re-reads the account',
+    'a reconnection after a gap re-reads the account',
   );
+  assert.ok(api.calls.some(([method]) => method === 'getActiveProgram'));
+});
+
+/** Make the FRIDGE due for a poll and clear the call log. */
+function makeFridgeDue(api, registry) {
+  registry.lastPollAt.set(FRIDGE.haId, Date.now() - config.poll_frequency * 1000);
+  api.calls.length = 0;
+}
+
+test('a poll behind a healthy event stream costs one status read', async () => {
+  const { api, registry } = await createRegistry();
+  registry.markStreamAlive();
+  makeFridgeDue(api, registry);
+
+  await registry.poll(deviceOf(FRIDGE.haId));
+
+  assert.deepEqual(api.calls, [['getStatuses', FRIDGE.haId]]);
+  assert.equal(registry.isPollDue(FRIDGE.haId), false, 'the light read restarts the clock');
+});
+
+test('a status the stream did not deliver triggers a full read of the appliance', async () => {
+  const { api, registry } = await createRegistry();
+  registry.markStreamAlive();
+  // The stream missed a change: what we hold no longer matches Home Connect.
+  registry.appliances.get(FRIDGE.haId).snapshot.statuses = [];
+  makeFridgeDue(api, registry);
+
+  await registry.poll(deviceOf(FRIDGE.haId));
+
+  assert.ok(api.calls.some(([method]) => method === 'getAppliance'));
+  assert.ok(api.calls.some(([method]) => method === 'getSettings'));
+});
+
+test('a silent or closed event stream brings the full poll back', async () => {
+  const { api, registry } = await createRegistry();
+  // Last sign of life four minutes ago: past the keep-alive watchdog.
+  registry.streamAliveAt = Date.now() - 4 * 60 * 1000;
+  makeFridgeDue(api, registry);
+  await registry.poll(deviceOf(FRIDGE.haId));
+  assert.ok(api.calls.some(([method]) => method === 'getAppliance'));
+
+  registry.markStreamAlive();
+  registry.markStreamDown();
+  makeFridgeDue(api, registry);
+  await registry.poll(deviceOf(FRIDGE.haId));
+  assert.ok(api.calls.some(([method]) => method === 'getAppliance'));
+});
+
+test('two pollers ticking together read the appliance once', async () => {
+  // Gladys' onPoll and the integration's own loop can land on the same device
+  // in the same second: the second one must see the slot already taken.
+  const { api, registry } = await createRegistry();
+  makeFridgeDue(api, registry);
+
+  await Promise.all([registry.poll(deviceOf(FRIDGE.haId)), registry.poll(deviceOf(FRIDGE.haId))]);
+
+  assert.equal(api.calls.filter(([method]) => method === 'getAppliance').length, 1);
+});
+
+test('a failed poll gives its slot back so the next tick tries again', async () => {
+  let failing = true;
+  const { api, registry } = await createRegistry({
+    async getAppliance(haId) {
+      api.calls.push(['getAppliance', haId]);
+      if (failing) {
+        throw new Error('getaddrinfo EAI_AGAIN api.home-connect.com');
+      }
+      return FRIDGE;
+    },
+  });
+  makeFridgeDue(api, registry);
+
+  await assert.rejects(registry.poll(deviceOf(FRIDGE.haId)), /EAI_AGAIN/);
+  assert.equal(registry.isPollDue(FRIDGE.haId), true);
+
+  failing = false;
+  await registry.poll(deviceOf(FRIDGE.haId));
+  assert.equal(api.calls.filter(([method]) => method === 'getAppliance').length, 2);
 });
 
 test('external ids round-trip back to the haId and the feature suffix', () => {
