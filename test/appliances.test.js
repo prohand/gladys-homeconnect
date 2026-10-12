@@ -362,8 +362,8 @@ test('a value that has not moved for hours is re-stated before Gladys calls it o
   // Hours later, with an appliance that changed nothing at all: Gladys times
   // every feature and shows "no recent value" past its outdated threshold, so
   // the unchanged values are sent again to confirm they still hold.
-  for (const [featureExternalId, published] of registry.publishedStates) {
-    registry.publishedStates.set(featureExternalId, {
+  for (const [featureExternalId, published] of gladys.publishedStates) {
+    gladys.publishedStates.set(featureExternalId, {
       ...published,
       at: published.at - 2 * 60 * 60 * 1000,
     });
@@ -378,6 +378,8 @@ test('deleting the device makes a later recreation publish everything again', as
   const { gladys, registry } = await createRegistry();
   await registry.poll(deviceOf(FRIDGE.haId));
 
+  // What the SDK does when Gladys announces the deletion, then our handler.
+  gladys.forgetPublishedStates(deviceOf(FRIDGE.haId).external_id);
   registry.handleDeviceDeleted(deviceOf(FRIDGE.haId));
   gladys.published.length = 0;
   await registry.handleDeviceCreated(deviceOf(FRIDGE.haId));
