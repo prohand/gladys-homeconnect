@@ -7,8 +7,8 @@
 //   Home Connect                       Gladys
 //   ------------                       ------
 //   GET /homeappliances       ──▶ refresh()      ──▶ publishDiscoveredDevices
-//   GET /settings /status     ──▶ snapshot       ──▶ publishStates
-//   SSE STATUS/NOTIFY/EVENT   ──▶ handleEvent()  ──▶ publishState
+//   GET /settings /status     ──▶ snapshot       ──▶ publishChangedStates
+//   SSE STATUS/NOTIFY/EVENT   ──▶ handleEvent()  ──▶ publishChangedStates
 //   PUT /settings, /programs  ◀── setValue()     ◀── onSetValue
 //
 // Everything about "which Gladys feature does this Home Connect key feed" is
@@ -92,13 +92,6 @@ export class ApplianceRegistry {
     this.rediscoveryTimer = null;
     /** @type {Map<string, number>} last effective poll per haId, for the throttle */
     this.lastPollAt = new Map();
-    /**
-     * Last state published per feature external_id, with when it was sent: the
-     * value answers "did anything change", the timestamp "is Gladys about to
-     * call this stale".
-     * @type {Map<string, {key: string, at: number}>}
-     */
-    this.publishedStates = new Map();
     /** Tail of the event queue: the stream's events are applied one at a time. */
     this.eventQueue = Promise.resolve();
     /**
@@ -377,19 +370,20 @@ export class ApplianceRegistry {
    * @param {boolean} [options.force]
    */
   async pushStates(states, { force = false } = {}) {
-    const now = Date.now();
-    const fresh = force ? states : states.filter((state) => this.needsPublishing(state, now));
-    if (fresh.length === 0) {
-      return;
+    if (force) {
+      // What the SDK remembers is then wrong about what Gladys holds: forget
+      // it, so every value of the batch goes out again.
+      states.forEach(({ device_feature_external_id: id }) => this.gladys.forgetPublishedStates(id));
     }
-    // publishStates batches up to 100 states per request; an appliance never
-    // gets close, so one call per appliance is enough.
-    await this.gladys.publishStates(fresh);
-    // Only after the publish succeeded: a failed batch must be sent again.
-    for (const state of fresh) {
-      this.publishedStates.set(state.device_feature_external_id, { key: stateKey(state), at: now });
+    // The SDK keeps the last value Gladys ACCEPTED per feature (a failed batch
+    // is sent again by the next call) and re-sends an unchanged one once it is
+    // STATE_REFRESH_MS old.
+    const { count } = await this.gladys.publishChangedStates(states, {
+      heartbeat: STATE_REFRESH_MS,
+    });
+    if (count > 0) {
+      this.notifyChanged();
     }
-    this.notifyChanged();
   }
 
   /**
@@ -402,22 +396,6 @@ export class ApplianceRegistry {
     } catch (err) {
       logger.debug(`Widget nudge failed: ${err.message}`);
     }
-  }
-
-  /**
-   * Whether a state is worth sending: a value Gladys has never seen, a value
-   * that changed, or one whose last publication is old enough to be about to
-   * expire on the dashboard.
-   *
-   * @param {{device_feature_external_id: string, state?: number, text?: string}} state
-   * @param {number} now
-   */
-  needsPublishing(state, now) {
-    const published = this.publishedStates.get(state.device_feature_external_id);
-    if (!published || published.key !== stateKey(state)) {
-      return true;
-    }
-    return now - published.at >= STATE_REFRESH_MS;
   }
 
   /**
@@ -841,12 +819,9 @@ export class ApplianceRegistry {
    */
   forget(haId) {
     this.fullyPublished.delete(haId);
-    const prefix = `${this.gladys.externalIds(DEVICE_TYPE, haId).device}:`;
-    for (const key of this.publishedStates.keys()) {
-      if (key.startsWith(prefix)) {
-        this.publishedStates.delete(key);
-      }
-    }
+    // The SDK already does it when Gladys deletes the device, not when the
+    // appliance leaves the Home Connect account.
+    this.gladys.forgetPublishedStates(this.deviceExternalId(haId));
   }
 
   /**
@@ -893,11 +868,6 @@ export class ApplianceRegistry {
       { device_feature_external_id: this.featureExternalId(haId, featureId), ...state },
     ]);
   }
-}
-
-/** Identity of a published state, for the "same value again" comparison. */
-function stateKey(state) {
-  return state.text === undefined ? `n:${state.state}` : `t:${state.text}`;
 }
 
 /**

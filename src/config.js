@@ -16,6 +16,7 @@
 // connection" action can show the user what to register at Home Connect.
 // -----------------------------------------------------------------------------
 
+import { DEVICE_POLL_FREQUENCIES } from '@gladysassistant/integration-sdk';
 import { DEFAULT_SCOPE, PRODUCTION_BASE_URL, SIMULATOR_BASE_URL } from './homeconnect/constants.js';
 
 // Keep these consistent with the `default` values of the manifest.
@@ -47,7 +48,7 @@ const SUPPORTED_LANGUAGES = new Set(['en', 'fr']);
 // far too fast for the Home Connect daily quota, so every device is published
 // at that tick and the registry throttles the ticks down to the interval the
 // user actually configured (in seconds) — see ApplianceRegistry.poll().
-export const GLADYS_POLL_TICK_MS = 60_000;
+export const GLADYS_POLL_TICK_MS = DEVICE_POLL_FREQUENCIES.EVERY_MINUTES;
 
 /**
  * Merge the user configuration with the defaults and derive the rest.
