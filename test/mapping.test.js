@@ -14,11 +14,16 @@ import {
 import { GLADYS_POLL_TICK_MS, normalizeConfig } from '../src/config.js';
 import { buildDevice, buildFeatureModels, buildStates, toState } from '../src/mapping/appliance.js';
 import {
+  EVENT_FEATURES,
   OPTION_FEATURES,
   PROGRAM_SWITCH_ID,
   SETTING_FEATURES,
+  STATUS_FEATURES,
+  SYNTHETIC_FEATURES,
   mapUnit,
 } from '../src/mapping/catalog.js';
+import { describeAppliance, formatDuration } from '../src/mapping/describe.js';
+import { SUPPORTED_LANGUAGES } from '../src/config.js';
 import {
   EVENTS,
   EVENT_PRESENT_STATE,
@@ -125,6 +130,41 @@ test('feature names follow the configured language', () => {
   const device = buildDevice(gladys, dishwasherSnapshot(), normalizeConfig({ language: 'fr' }));
   const power = device.features.find((feature) => feature.external_id.endsWith(':power'));
   assert.equal(power.name, 'Alimentation');
+
+  for (const [language, expected] of [
+    ['de', 'Ein/Aus'],
+    ['es', 'Encendido'],
+  ]) {
+    const translated = buildDevice(gladys, dishwasherSnapshot(), normalizeConfig({ language }));
+    const feature = translated.features.find((entry) => entry.external_id.endsWith(':power'));
+    assert.equal(feature.name, expected);
+  }
+});
+
+test('every catalog feature is named in every supported language', () => {
+  const catalogs = [
+    EVENT_FEATURES,
+    OPTION_FEATURES,
+    SETTING_FEATURES,
+    STATUS_FEATURES,
+    SYNTHETIC_FEATURES,
+  ];
+  for (const entry of catalogs.flatMap((catalog) => Object.values(catalog))) {
+    for (const language of SUPPORTED_LANGUAGES) {
+      assert.ok(entry.name[language], `${entry.id} has no ${language} name`);
+    }
+  }
+});
+
+test('the readable description follows the reader language, English otherwise', () => {
+  const snapshot = dishwasherSnapshot();
+  assert.equal(describeAppliance(snapshot, 'de').stateLabel, 'Läuft');
+  assert.equal(describeAppliance(snapshot, 'es').stateLabel, 'En marcha');
+  assert.equal(describeAppliance(snapshot, 'it').stateLabel, 'Running');
+  assert.equal(formatDuration(7500, 'de'), '2 h 05');
+  assert.equal(formatDuration(7500, 'es'), '2 h 05');
+  assert.equal(formatDuration(7500, 'en'), '2h05');
+  assert.equal(formatDuration(7500, 'it'), '2h05');
 });
 
 test('appliance constraints refine the bounds of a setpoint', () => {

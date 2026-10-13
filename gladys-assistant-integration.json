@@ -4,7 +4,9 @@
   "name": "Home Connect",
   "description": {
     "en": "Monitor and control your Bosch, Siemens, Neff and Gaggenau appliances via Home Connect.",
-    "fr": "Pilotez et suivez vos appareils Bosch, Siemens, Neff et Gaggenau via Home Connect."
+    "fr": "Pilotez et suivez vos appareils Bosch, Siemens, Neff et Gaggenau via Home Connect.",
+    "de": "Steuere und überwache deine Bosch-, Siemens-, Neff- und Gaggenau-Geräte über Home Connect.",
+    "es": "Controle y supervise sus electrodomésticos Bosch, Siemens, Neff y Gaggenau mediante Home Connect."
   },
   "version": "2.3.3",
   "docker_image": "ghcr.io/prohand/gladys-homeconnect:2.3.3",
@@ -18,25 +20,33 @@
       "type": "section",
       "label": {
         "en": "Before you start",
-        "fr": "Avant de commencer"
+        "fr": "Avant de commencer",
+        "de": "Bevor du beginnst",
+        "es": "Antes de empezar"
       },
       "description": {
         "en": "Home Connect has no local API: everything goes through the BSH cloud. Create a free developer account, register an application of type \"Home Connect Application\" with the Authorization Code Grant Flow, and paste its Client ID and Client Secret below. The redirect URI to register is shown by the \"Test the connection\" action once you start the connection.",
-        "fr": "Home Connect n'a pas d'API locale : tout passe par le cloud BSH. Créez un compte développeur gratuit, enregistrez une application de type « Home Connect Application » avec le flux Authorization Code Grant, puis collez ses Client ID et Client Secret ci-dessous. L'URL de redirection à déclarer est affichée par l'action « Tester la connexion » une fois la connexion lancée."
+        "fr": "Home Connect n'a pas d'API locale : tout passe par le cloud BSH. Créez un compte développeur gratuit, enregistrez une application de type « Home Connect Application » avec le flux Authorization Code Grant, puis collez ses Client ID et Client Secret ci-dessous. L'URL de redirection à déclarer est affichée par l'action « Tester la connexion » une fois la connexion lancée.",
+        "de": "Home Connect hat keine lokale API: Alles läuft über die BSH-Cloud. Lege ein kostenloses Entwicklerkonto an, registriere eine Anwendung vom Typ „Home Connect Application“ mit dem Authorization Code Grant Flow und füge unten deren Client ID und Client Secret ein. Die einzutragende Weiterleitungs-URI zeigt die Aktion „Verbindung testen“ an, sobald du die Verbindung gestartet hast.",
+        "es": "Home Connect no tiene API local: todo pasa por la nube de BSH. Cree una cuenta de desarrollador gratuita, registre una aplicación de tipo «Home Connect Application» con el flujo Authorization Code Grant y pegue a continuación su Client ID y su Client Secret. La URI de redirección que debe declarar la muestra la acción «Probar la conexión» una vez iniciada la conexión."
       },
       "links": [
         {
           "url": "https://developer.home-connect.com/",
           "label": {
             "en": "Home Connect developer portal",
-            "fr": "Portail développeur Home Connect"
+            "fr": "Portail développeur Home Connect",
+            "de": "Home Connect-Entwicklerportal",
+            "es": "Portal para desarrolladores de Home Connect"
           }
         },
         {
           "url": "https://developer.home-connect.com/application/add",
           "label": {
             "en": "Register an application",
-            "fr": "Enregistrer une application"
+            "fr": "Enregistrer une application",
+            "de": "Anwendung registrieren",
+            "es": "Registrar una aplicación"
           }
         }
       ]
@@ -46,16 +56,22 @@
       "type": "string",
       "label": {
         "en": "Client ID",
-        "fr": "Client ID"
+        "fr": "Client ID",
+        "de": "Client ID",
+        "es": "Client ID"
       },
       "description": {
         "en": "Client ID of your Home Connect application.",
-        "fr": "Client ID de votre application Home Connect."
+        "fr": "Client ID de votre application Home Connect.",
+        "de": "Client ID deiner Home Connect-Anwendung.",
+        "es": "Client ID de su aplicación Home Connect."
       },
       "required": true,
       "placeholder": {
         "en": "1A2B3C…",
-        "fr": "1A2B3C…"
+        "fr": "1A2B3C…",
+        "de": "1A2B3C…",
+        "es": "1A2B3C…"
       }
     },
     {
@@ -63,11 +79,15 @@
       "type": "secret",
       "label": {
         "en": "Client Secret",
-        "fr": "Client Secret"
+        "fr": "Client Secret",
+        "de": "Client Secret",
+        "es": "Client Secret"
       },
       "description": {
         "en": "Client Secret of your Home Connect application. Leave empty only if you registered a public client without a secret.",
-        "fr": "Client Secret de votre application Home Connect. Laissez vide uniquement si vous avez enregistré un client public sans secret."
+        "fr": "Client Secret de votre application Home Connect. Laissez vide uniquement si vous avez enregistré un client public sans secret.",
+        "de": "Client Secret deiner Home Connect-Anwendung. Lass das Feld nur leer, wenn du einen öffentlichen Client ohne Secret registriert hast.",
+        "es": "Client Secret de su aplicación Home Connect. Déjelo vacío solo si registró un cliente público sin secreto."
       },
       "required": false
     },
@@ -76,11 +96,15 @@
       "type": "oauth2",
       "label": {
         "en": "Home Connect account",
-        "fr": "Compte Home Connect"
+        "fr": "Compte Home Connect",
+        "de": "Home Connect-Konto",
+        "es": "Cuenta de Home Connect"
       },
       "description": {
         "en": "Sign in with the Home Connect account your appliances are paired with, then allow Gladys.",
-        "fr": "Connectez-vous avec le compte Home Connect auquel vos appareils sont associés, puis autorisez Gladys."
+        "fr": "Connectez-vous avec le compte Home Connect auquel vos appareils sont associés, puis autorisez Gladys.",
+        "de": "Melde dich mit dem Home Connect-Konto an, mit dem deine Geräte gekoppelt sind, und erlaube dann Gladys den Zugriff.",
+        "es": "Inicie sesión con la cuenta de Home Connect a la que están vinculados sus electrodomésticos y autorice a Gladys."
       },
       "required": true
     },
@@ -89,11 +113,15 @@
       "type": "select",
       "label": {
         "en": "Language",
-        "fr": "Langue"
+        "fr": "Langue",
+        "de": "Sprache",
+        "es": "Idioma"
       },
       "description": {
         "en": "Language of the device feature names and of the program names returned by Home Connect.",
-        "fr": "Langue des noms de fonctionnalités et des noms de programmes renvoyés par Home Connect."
+        "fr": "Langue des noms de fonctionnalités et des noms de programmes renvoyés par Home Connect.",
+        "de": "Sprache der Funktionsnamen der Geräte und der von Home Connect gelieferten Programmnamen.",
+        "es": "Idioma de los nombres de las funciones de los dispositivos y de los nombres de programa que devuelve Home Connect."
       },
       "required": false,
       "default": "fr",
@@ -102,14 +130,36 @@
           "value": "fr",
           "label": {
             "en": "French",
-            "fr": "Français"
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
           }
         },
         {
           "value": "en",
           "label": {
             "en": "English",
-            "fr": "Anglais"
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
           }
         }
       ]
@@ -119,11 +169,15 @@
       "type": "number",
       "label": {
         "en": "Refresh interval (s)",
-        "fr": "Intervalle de rafraîchissement (s)"
+        "fr": "Intervalle de rafraîchissement (s)",
+        "de": "Aktualisierungsintervall (s)",
+        "es": "Intervalo de actualización (s)"
       },
       "description": {
         "en": "Safety net behind the real-time event stream. Home Connect enforces a daily request quota, so keep it high unless you have a reason not to.",
-        "fr": "Filet de sécurité derrière le flux d'événements temps réel. Home Connect impose un quota de requêtes quotidien : gardez une valeur élevée sauf raison particulière."
+        "fr": "Filet de sécurité derrière le flux d'événements temps réel. Home Connect impose un quota de requêtes quotidien : gardez une valeur élevée sauf raison particulière.",
+        "de": "Sicherheitsnetz hinter dem Echtzeit-Ereignisstrom. Home Connect erzwingt ein tägliches Anfragekontingent: Behalte einen hohen Wert, sofern du keinen Grund dagegen hast.",
+        "es": "Red de seguridad tras el flujo de eventos en tiempo real. Home Connect impone una cuota diaria de peticiones: mantenga un valor alto salvo que tenga un motivo concreto."
       },
       "required": false,
       "default": 900,
@@ -135,11 +189,15 @@
       "type": "string",
       "label": {
         "en": "OAuth scopes",
-        "fr": "Scopes OAuth"
+        "fr": "Scopes OAuth",
+        "de": "OAuth-Scopes",
+        "es": "Scopes OAuth"
       },
       "description": {
         "en": "Space-separated Home Connect scopes requested during authorization. Narrow it down if your developer application was registered with fewer permissions.",
-        "fr": "Scopes Home Connect demandés lors de l'autorisation, séparés par des espaces. Réduisez-les si votre application développeur a été enregistrée avec moins de permissions."
+        "fr": "Scopes Home Connect demandés lors de l'autorisation, séparés par des espaces. Réduisez-les si votre application développeur a été enregistrée avec moins de permissions.",
+        "de": "Bei der Autorisierung angeforderte Home Connect-Scopes, durch Leerzeichen getrennt. Schränke sie ein, wenn deine Entwickleranwendung mit weniger Berechtigungen registriert wurde.",
+        "es": "Scopes de Home Connect solicitados durante la autorización, separados por espacios. Redúzcalos si su aplicación de desarrollador se registró con menos permisos."
       },
       "required": false,
       "default": "IdentifyAppliance Monitor Settings Control"
@@ -149,11 +207,15 @@
       "type": "boolean",
       "label": {
         "en": "Use the Home Connect simulator",
-        "fr": "Utiliser le simulateur Home Connect"
+        "fr": "Utiliser le simulateur Home Connect",
+        "de": "Home Connect-Simulator verwenden",
+        "es": "Usar el simulador de Home Connect"
       },
       "description": {
         "en": "Talk to simulator.home-connect.com instead of the production API, to test without real appliances.",
-        "fr": "Utiliser simulator.home-connect.com au lieu de l'API de production, pour tester sans appareil réel."
+        "fr": "Utiliser simulator.home-connect.com au lieu de l'API de production, pour tester sans appareil réel.",
+        "de": "simulator.home-connect.com statt der Produktions-API verwenden, um ohne echte Geräte zu testen.",
+        "es": "Usar simulator.home-connect.com en lugar de la API de producción, para probar sin electrodomésticos reales."
       },
       "required": false,
       "default": false
@@ -164,7 +226,9 @@
       "key": "test_connection",
       "label": {
         "en": "Test the connection",
-        "fr": "Tester la connexion"
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
       },
       "timeout_seconds": 30
     },
@@ -172,7 +236,9 @@
       "key": "refresh_devices",
       "label": {
         "en": "Refresh the appliances",
-        "fr": "Actualiser les appareils"
+        "fr": "Actualiser les appareils",
+        "de": "Geräte aktualisieren",
+        "es": "Actualizar los electrodomésticos"
       },
       "timeout_seconds": 60
     }
@@ -182,11 +248,15 @@
       "key": "program_started",
       "label": {
         "en": "A program started",
-        "fr": "Un programme a démarré"
+        "fr": "Un programme a démarré",
+        "de": "Ein Programm wurde gestartet",
+        "es": "Se ha iniciado un programa"
       },
       "description": {
         "en": "An appliance started a program, or scheduled a delayed start.",
-        "fr": "Un appareil a lancé un programme, ou programmé un départ différé."
+        "fr": "Un appareil a lancé un programme, ou programmé un départ différé.",
+        "de": "Ein Gerät hat ein Programm gestartet oder einen Startaufschub geplant.",
+        "es": "Un electrodoméstico ha iniciado un programa o ha programado un inicio diferido."
       },
       "fields": [
         {
@@ -194,11 +264,15 @@
           "type": "select",
           "label": {
             "en": "Appliance",
-            "fr": "Appareil"
+            "fr": "Appareil",
+            "de": "Gerät",
+            "es": "Electrodoméstico"
           },
           "description": {
             "en": "Leave empty to react to any Home Connect appliance.",
-            "fr": "Laissez vide pour réagir à n’importe quel appareil Home Connect."
+            "fr": "Laissez vide pour réagir à n’importe quel appareil Home Connect.",
+            "de": "Leer lassen, um auf jedes Home Connect-Gerät zu reagieren.",
+            "es": "Déjelo vacío para reaccionar a cualquier electrodoméstico Home Connect."
           },
           "source": "devices"
         }
@@ -209,7 +283,9 @@
           "type": "string",
           "label": {
             "en": "Appliance",
-            "fr": "Appareil"
+            "fr": "Appareil",
+            "de": "Gerät",
+            "es": "Electrodoméstico"
           }
         },
         {
@@ -217,7 +293,9 @@
           "type": "string",
           "label": {
             "en": "Appliance name",
-            "fr": "Nom de l’appareil"
+            "fr": "Nom de l’appareil",
+            "de": "Gerätename",
+            "es": "Nombre del electrodoméstico"
           }
         },
         {
@@ -225,7 +303,9 @@
           "type": "string",
           "label": {
             "en": "Appliance type",
-            "fr": "Type d’appareil"
+            "fr": "Type d’appareil",
+            "de": "Gerätetyp",
+            "es": "Tipo de electrodoméstico"
           }
         },
         {
@@ -233,7 +313,9 @@
           "type": "string",
           "label": {
             "en": "Program",
-            "fr": "Programme"
+            "fr": "Programme",
+            "de": "Programm",
+            "es": "Programa"
           }
         },
         {
@@ -241,7 +323,9 @@
           "type": "string",
           "label": {
             "en": "Program key",
-            "fr": "Clé du programme"
+            "fr": "Clé du programme",
+            "de": "Programmschlüssel",
+            "es": "Clave del programa"
           }
         }
       ]
@@ -250,11 +334,15 @@
       "key": "program_finished",
       "label": {
         "en": "A program finished",
-        "fr": "Un programme est terminé"
+        "fr": "Un programme est terminé",
+        "de": "Ein Programm ist beendet",
+        "es": "Ha terminado un programa"
       },
       "description": {
         "en": "An appliance finished its program normally.",
-        "fr": "Un appareil a terminé son programme normalement."
+        "fr": "Un appareil a terminé son programme normalement.",
+        "de": "Ein Gerät hat sein Programm normal beendet.",
+        "es": "Un electrodoméstico ha terminado su programa con normalidad."
       },
       "fields": [
         {
@@ -262,11 +350,15 @@
           "type": "select",
           "label": {
             "en": "Appliance",
-            "fr": "Appareil"
+            "fr": "Appareil",
+            "de": "Gerät",
+            "es": "Electrodoméstico"
           },
           "description": {
             "en": "Leave empty to react to any Home Connect appliance.",
-            "fr": "Laissez vide pour réagir à n’importe quel appareil Home Connect."
+            "fr": "Laissez vide pour réagir à n’importe quel appareil Home Connect.",
+            "de": "Leer lassen, um auf jedes Home Connect-Gerät zu reagieren.",
+            "es": "Déjelo vacío para reaccionar a cualquier electrodoméstico Home Connect."
           },
           "source": "devices"
         }
@@ -277,7 +369,9 @@
           "type": "string",
           "label": {
             "en": "Appliance",
-            "fr": "Appareil"
+            "fr": "Appareil",
+            "de": "Gerät",
+            "es": "Electrodoméstico"
           }
         },
         {
@@ -285,7 +379,9 @@
           "type": "string",
           "label": {
             "en": "Appliance name",
-            "fr": "Nom de l’appareil"
+            "fr": "Nom de l’appareil",
+            "de": "Gerätename",
+            "es": "Nombre del electrodoméstico"
           }
         },
         {
@@ -293,7 +389,9 @@
           "type": "string",
           "label": {
             "en": "Appliance type",
-            "fr": "Type d’appareil"
+            "fr": "Type d’appareil",
+            "de": "Gerätetyp",
+            "es": "Tipo de electrodoméstico"
           }
         },
         {
@@ -301,7 +399,9 @@
           "type": "string",
           "label": {
             "en": "Program",
-            "fr": "Programme"
+            "fr": "Programme",
+            "de": "Programm",
+            "es": "Programa"
           }
         },
         {
@@ -309,7 +409,9 @@
           "type": "string",
           "label": {
             "en": "Program key",
-            "fr": "Clé du programme"
+            "fr": "Clé du programme",
+            "de": "Programmschlüssel",
+            "es": "Clave del programa"
           }
         }
       ]
@@ -318,11 +420,15 @@
       "key": "program_aborted",
       "label": {
         "en": "A program was aborted",
-        "fr": "Un programme a été interrompu"
+        "fr": "Un programme a été interrompu",
+        "de": "Ein Programm wurde abgebrochen",
+        "es": "Se ha interrumpido un programa"
       },
       "description": {
         "en": "A program was stopped before the end, on the appliance or from Gladys.",
-        "fr": "Un programme a été arrêté avant la fin, sur l’appareil ou depuis Gladys."
+        "fr": "Un programme a été arrêté avant la fin, sur l’appareil ou depuis Gladys.",
+        "de": "Ein Programm wurde vor dem Ende gestoppt, am Gerät oder über Gladys.",
+        "es": "Un programa se ha detenido antes del final, en el electrodoméstico o desde Gladys."
       },
       "fields": [
         {
@@ -330,11 +436,15 @@
           "type": "select",
           "label": {
             "en": "Appliance",
-            "fr": "Appareil"
+            "fr": "Appareil",
+            "de": "Gerät",
+            "es": "Electrodoméstico"
           },
           "description": {
             "en": "Leave empty to react to any Home Connect appliance.",
-            "fr": "Laissez vide pour réagir à n’importe quel appareil Home Connect."
+            "fr": "Laissez vide pour réagir à n’importe quel appareil Home Connect.",
+            "de": "Leer lassen, um auf jedes Home Connect-Gerät zu reagieren.",
+            "es": "Déjelo vacío para reaccionar a cualquier electrodoméstico Home Connect."
           },
           "source": "devices"
         }
@@ -345,7 +455,9 @@
           "type": "string",
           "label": {
             "en": "Appliance",
-            "fr": "Appareil"
+            "fr": "Appareil",
+            "de": "Gerät",
+            "es": "Electrodoméstico"
           }
         },
         {
@@ -353,7 +465,9 @@
           "type": "string",
           "label": {
             "en": "Appliance name",
-            "fr": "Nom de l’appareil"
+            "fr": "Nom de l’appareil",
+            "de": "Gerätename",
+            "es": "Nombre del electrodoméstico"
           }
         },
         {
@@ -361,7 +475,9 @@
           "type": "string",
           "label": {
             "en": "Appliance type",
-            "fr": "Type d’appareil"
+            "fr": "Type d’appareil",
+            "de": "Gerätetyp",
+            "es": "Tipo de electrodoméstico"
           }
         },
         {
@@ -369,7 +485,9 @@
           "type": "string",
           "label": {
             "en": "Program",
-            "fr": "Programme"
+            "fr": "Programme",
+            "de": "Programm",
+            "es": "Programa"
           }
         },
         {
@@ -377,7 +495,9 @@
           "type": "string",
           "label": {
             "en": "Program key",
-            "fr": "Clé du programme"
+            "fr": "Clé du programme",
+            "de": "Programmschlüssel",
+            "es": "Clave del programa"
           }
         }
       ]
@@ -386,11 +506,15 @@
       "key": "appliance_notification",
       "label": {
         "en": "An appliance raised a notification",
-        "fr": "Un appareil a signalé quelque chose"
+        "fr": "Un appareil a signalé quelque chose",
+        "de": "Ein Gerät meldet etwas",
+        "es": "Un electrodoméstico ha avisado"
       },
       "description": {
         "en": "Salt or rinse aid low, water tank empty, door left open, filter saturated…",
-        "fr": "Sel ou liquide de rinçage bas, réservoir vide, porte restée ouverte, filtre saturé…"
+        "fr": "Sel ou liquide de rinçage bas, réservoir vide, porte restée ouverte, filtre saturé…",
+        "de": "Salz oder Klarspüler knapp, Wassertank leer, Tür offen gelassen, Filter gesättigt…",
+        "es": "Poca sal o abrillantador, depósito de agua vacío, puerta abierta, filtro saturado…"
       },
       "fields": [
         {
@@ -398,11 +522,15 @@
           "type": "select",
           "label": {
             "en": "Appliance",
-            "fr": "Appareil"
+            "fr": "Appareil",
+            "de": "Gerät",
+            "es": "Electrodoméstico"
           },
           "description": {
             "en": "Leave empty to react to any Home Connect appliance.",
-            "fr": "Laissez vide pour réagir à n’importe quel appareil Home Connect."
+            "fr": "Laissez vide pour réagir à n’importe quel appareil Home Connect.",
+            "de": "Leer lassen, um auf jedes Home Connect-Gerät zu reagieren.",
+            "es": "Déjelo vacío para reaccionar a cualquier electrodoméstico Home Connect."
           },
           "source": "devices"
         },
@@ -411,137 +539,177 @@
           "type": "multi_select",
           "label": {
             "en": "Notifications",
-            "fr": "Notifications"
+            "fr": "Notifications",
+            "de": "Benachrichtigungen",
+            "es": "Notificaciones"
           },
           "description": {
             "en": "Leave empty to react to every notification the appliance raises.",
-            "fr": "Laissez vide pour réagir à toutes les notifications de l’appareil."
+            "fr": "Laissez vide pour réagir à toutes les notifications de l’appareil.",
+            "de": "Leer lassen, um auf jede Benachrichtigung des Geräts zu reagieren.",
+            "es": "Déjelo vacío para reaccionar a todas las notificaciones del electrodoméstico."
           },
           "options": [
             {
               "value": "event-alarm-clock",
               "label": {
                 "en": "Timer elapsed",
-                "fr": "Minuteur écoulé"
+                "fr": "Minuteur écoulé",
+                "de": "Timer abgelaufen",
+                "es": "Temporizador finalizado"
               }
             },
             {
               "value": "event-preheat-finished",
               "label": {
                 "en": "Preheating finished",
-                "fr": "Préchauffage terminé"
+                "fr": "Préchauffage terminé",
+                "de": "Vorheizen beendet",
+                "es": "Precalentamiento terminado"
               }
             },
             {
               "value": "event-regular-preheat-finished",
               "label": {
                 "en": "Regular preheating finished",
-                "fr": "Préchauffage standard terminé"
+                "fr": "Préchauffage standard terminé",
+                "de": "Normales Vorheizen beendet",
+                "es": "Precalentamiento estándar terminado"
               }
             },
             {
               "value": "event-grease-filter-nearly-saturated",
               "label": {
                 "en": "Grease filter nearly saturated",
-                "fr": "Filtre à graisse presque saturé"
+                "fr": "Filtre à graisse presque saturé",
+                "de": "Fettfilter fast gesättigt",
+                "es": "Filtro de grasa casi saturado"
               }
             },
             {
               "value": "event-grease-filter-saturated",
               "label": {
                 "en": "Grease filter saturated",
-                "fr": "Filtre à graisse saturé"
+                "fr": "Filtre à graisse saturé",
+                "de": "Fettfilter gesättigt",
+                "es": "Filtro de grasa saturado"
               }
             },
             {
               "value": "event-salt-nearly-empty",
               "label": {
                 "en": "Salt nearly empty",
-                "fr": "Sel presque vide"
+                "fr": "Sel presque vide",
+                "de": "Salz fast leer",
+                "es": "Sal casi agotada"
               }
             },
             {
               "value": "event-rinse-aid-nearly-empty",
               "label": {
                 "en": "Rinse aid nearly empty",
-                "fr": "Liquide de rinçage presque vide"
+                "fr": "Liquide de rinçage presque vide",
+                "de": "Klarspüler fast leer",
+                "es": "Abrillantador casi agotado"
               }
             },
             {
               "value": "event-bean-container-empty",
               "label": {
                 "en": "Bean container empty",
-                "fr": "Bac à grains vide"
+                "fr": "Bac à grains vide",
+                "de": "Bohnenbehälter leer",
+                "es": "Depósito de granos vacío"
               }
             },
             {
               "value": "event-water-tank-empty",
               "label": {
                 "en": "Water tank empty",
-                "fr": "Réservoir d'eau vide"
+                "fr": "Réservoir d'eau vide",
+                "de": "Wassertank leer",
+                "es": "Depósito de agua vacío"
               }
             },
             {
               "value": "event-drip-tray-full",
               "label": {
                 "en": "Drip tray full",
-                "fr": "Bac récolte-gouttes plein"
+                "fr": "Bac récolte-gouttes plein",
+                "de": "Tropfschale voll",
+                "es": "Bandeja de goteo llena"
               }
             },
             {
               "value": "event-idos1-low",
               "label": {
                 "en": "i-Dos 1 nearly empty",
-                "fr": "i-Dos 1 presque vide"
+                "fr": "i-Dos 1 presque vide",
+                "de": "i-Dos 1 fast leer",
+                "es": "i-Dos 1 casi vacío"
               }
             },
             {
               "value": "event-idos2-low",
               "label": {
                 "en": "i-Dos 2 nearly empty",
-                "fr": "i-Dos 2 presque vide"
+                "fr": "i-Dos 2 presque vide",
+                "de": "i-Dos 2 fast leer",
+                "es": "i-Dos 2 casi vacío"
               }
             },
             {
               "value": "event-door-alarm-freezer",
               "label": {
                 "en": "Freezer door alarm",
-                "fr": "Alarme porte congélateur"
+                "fr": "Alarme porte congélateur",
+                "de": "Türalarm Gefrierfach",
+                "es": "Alarma de puerta del congelador"
               }
             },
             {
               "value": "event-door-alarm-refrigerator",
               "label": {
                 "en": "Refrigerator door alarm",
-                "fr": "Alarme porte réfrigérateur"
+                "fr": "Alarme porte réfrigérateur",
+                "de": "Türalarm Kühlschrank",
+                "es": "Alarma de puerta del frigorífico"
               }
             },
             {
               "value": "event-temperature-alarm-freezer",
               "label": {
                 "en": "Freezer temperature alarm",
-                "fr": "Alarme température congélateur"
+                "fr": "Alarme température congélateur",
+                "de": "Temperaturalarm Gefrierfach",
+                "es": "Alarma de temperatura del congelador"
               }
             },
             {
               "value": "event-empty-dust-box",
               "label": {
                 "en": "Dust box full",
-                "fr": "Bac à poussière plein"
+                "fr": "Bac à poussière plein",
+                "de": "Staubbehälter voll",
+                "es": "Depósito de polvo lleno"
               }
             },
             {
               "value": "event-robot-stuck",
               "label": {
                 "en": "Robot stuck",
-                "fr": "Robot bloqué"
+                "fr": "Robot bloqué",
+                "de": "Roboter festgefahren",
+                "es": "Robot atascado"
               }
             },
             {
               "value": "event-docking-station-not-found",
               "label": {
                 "en": "Docking station not found",
-                "fr": "Station de charge introuvable"
+                "fr": "Station de charge introuvable",
+                "de": "Ladestation nicht gefunden",
+                "es": "Base de carga no encontrada"
               }
             }
           ]
@@ -553,7 +721,9 @@
           "type": "string",
           "label": {
             "en": "Appliance",
-            "fr": "Appareil"
+            "fr": "Appareil",
+            "de": "Gerät",
+            "es": "Electrodoméstico"
           }
         },
         {
@@ -561,7 +731,9 @@
           "type": "string",
           "label": {
             "en": "Appliance name",
-            "fr": "Nom de l’appareil"
+            "fr": "Nom de l’appareil",
+            "de": "Gerätename",
+            "es": "Nombre del electrodoméstico"
           }
         },
         {
@@ -569,7 +741,9 @@
           "type": "string",
           "label": {
             "en": "Appliance type",
-            "fr": "Type d’appareil"
+            "fr": "Type d’appareil",
+            "de": "Gerätetyp",
+            "es": "Tipo de electrodoméstico"
           }
         },
         {
@@ -577,7 +751,9 @@
           "type": "string",
           "label": {
             "en": "Notification",
-            "fr": "Notification"
+            "fr": "Notification",
+            "de": "Benachrichtigung",
+            "es": "Notificación"
           }
         },
         {
@@ -585,7 +761,9 @@
           "type": "string",
           "label": {
             "en": "Notification name",
-            "fr": "Libellé de la notification"
+            "fr": "Libellé de la notification",
+            "de": "Bezeichnung der Benachrichtigung",
+            "es": "Nombre de la notificación"
           }
         }
       ]
@@ -596,11 +774,15 @@
       "key": "start_program",
       "label": {
         "en": "Start the selected program",
-        "fr": "Démarrer le programme sélectionné"
+        "fr": "Démarrer le programme sélectionné",
+        "de": "Ausgewähltes Programm starten",
+        "es": "Iniciar el programa seleccionado"
       },
       "description": {
         "en": "Runs the program already selected on the appliance. Remote start must be armed on it.",
-        "fr": "Lance le programme déjà sélectionné sur l’appareil. Le démarrage à distance doit y être activé."
+        "fr": "Lance le programme déjà sélectionné sur l’appareil. Le démarrage à distance doit y être activé.",
+        "de": "Startet das bereits am Gerät ausgewählte Programm. Der Fernstart muss dort aktiviert sein.",
+        "es": "Inicia el programa ya seleccionado en el electrodoméstico. El inicio remoto debe estar activado en él."
       },
       "timeout_seconds": 30,
       "fields": [
@@ -609,11 +791,15 @@
           "type": "select",
           "label": {
             "en": "Appliance",
-            "fr": "Appareil"
+            "fr": "Appareil",
+            "de": "Gerät",
+            "es": "Electrodoméstico"
           },
           "description": {
             "en": "The Home Connect appliance the action runs on.",
-            "fr": "L’appareil Home Connect sur lequel l’action s’applique."
+            "fr": "L’appareil Home Connect sur lequel l’action s’applique.",
+            "de": "Das Home Connect-Gerät, auf das die Aktion angewendet wird.",
+            "es": "El electrodoméstico Home Connect sobre el que se aplica la acción."
           },
           "required": true,
           "source": "devices"
@@ -625,7 +811,9 @@
           "type": "string",
           "label": {
             "en": "Program",
-            "fr": "Programme"
+            "fr": "Programme",
+            "de": "Programm",
+            "es": "Programa"
           }
         },
         {
@@ -633,7 +821,9 @@
           "type": "string",
           "label": {
             "en": "Program key",
-            "fr": "Clé du programme"
+            "fr": "Clé du programme",
+            "de": "Programmschlüssel",
+            "es": "Clave del programa"
           }
         }
       ]
@@ -642,11 +832,15 @@
       "key": "stop_program",
       "label": {
         "en": "Stop the running program",
-        "fr": "Arrêter le programme en cours"
+        "fr": "Arrêter le programme en cours",
+        "de": "Laufendes Programm stoppen",
+        "es": "Detener el programa en curso"
       },
       "description": {
         "en": "Aborts the program the appliance is running.",
-        "fr": "Interrompt le programme en cours sur l’appareil."
+        "fr": "Interrompt le programme en cours sur l’appareil.",
+        "de": "Bricht das laufende Programm des Geräts ab.",
+        "es": "Interrumpe el programa en curso del electrodoméstico."
       },
       "timeout_seconds": 30,
       "fields": [
@@ -655,11 +849,15 @@
           "type": "select",
           "label": {
             "en": "Appliance",
-            "fr": "Appareil"
+            "fr": "Appareil",
+            "de": "Gerät",
+            "es": "Electrodoméstico"
           },
           "description": {
             "en": "The Home Connect appliance the action runs on.",
-            "fr": "L’appareil Home Connect sur lequel l’action s’applique."
+            "fr": "L’appareil Home Connect sur lequel l’action s’applique.",
+            "de": "Das Home Connect-Gerät, auf das die Aktion angewendet wird.",
+            "es": "El electrodoméstico Home Connect sobre el que se aplica la acción."
           },
           "required": true,
           "source": "devices"
@@ -670,11 +868,15 @@
       "key": "pause_program",
       "label": {
         "en": "Pause the program",
-        "fr": "Mettre le programme en pause"
+        "fr": "Mettre le programme en pause",
+        "de": "Programm pausieren",
+        "es": "Pausar el programa"
       },
       "description": {
         "en": "Only the appliances that accept the Home Connect pause command.",
-        "fr": "Uniquement les appareils qui acceptent la commande pause de Home Connect."
+        "fr": "Uniquement les appareils qui acceptent la commande pause de Home Connect.",
+        "de": "Nur Geräte, die den Home Connect-Pausenbefehl unterstützen.",
+        "es": "Solo los electrodomésticos que aceptan la orden de pausa de Home Connect."
       },
       "timeout_seconds": 30,
       "fields": [
@@ -683,11 +885,15 @@
           "type": "select",
           "label": {
             "en": "Appliance",
-            "fr": "Appareil"
+            "fr": "Appareil",
+            "de": "Gerät",
+            "es": "Electrodoméstico"
           },
           "description": {
             "en": "The Home Connect appliance the action runs on.",
-            "fr": "L’appareil Home Connect sur lequel l’action s’applique."
+            "fr": "L’appareil Home Connect sur lequel l’action s’applique.",
+            "de": "Das Home Connect-Gerät, auf das die Aktion angewendet wird.",
+            "es": "El electrodoméstico Home Connect sobre el que se aplica la acción."
           },
           "required": true,
           "source": "devices"
@@ -698,11 +904,15 @@
       "key": "resume_program",
       "label": {
         "en": "Resume the program",
-        "fr": "Reprendre le programme"
+        "fr": "Reprendre le programme",
+        "de": "Programm fortsetzen",
+        "es": "Reanudar el programa"
       },
       "description": {
         "en": "Restarts a program that was paused.",
-        "fr": "Relance un programme mis en pause."
+        "fr": "Relance un programme mis en pause.",
+        "de": "Setzt ein pausiertes Programm fort.",
+        "es": "Reanuda un programa en pausa."
       },
       "timeout_seconds": 30,
       "fields": [
@@ -711,11 +921,15 @@
           "type": "select",
           "label": {
             "en": "Appliance",
-            "fr": "Appareil"
+            "fr": "Appareil",
+            "de": "Gerät",
+            "es": "Electrodoméstico"
           },
           "description": {
             "en": "The Home Connect appliance the action runs on.",
-            "fr": "L’appareil Home Connect sur lequel l’action s’applique."
+            "fr": "L’appareil Home Connect sur lequel l’action s’applique.",
+            "de": "Das Home Connect-Gerät, auf das die Aktion angewendet wird.",
+            "es": "El electrodoméstico Home Connect sobre el que se aplica la acción."
           },
           "required": true,
           "source": "devices"
@@ -726,11 +940,15 @@
       "key": "appliance_status",
       "label": {
         "en": "Read the appliance status",
-        "fr": "Lire l’état de l’appareil"
+        "fr": "Lire l’état de l’appareil",
+        "de": "Gerätestatus lesen",
+        "es": "Leer el estado del electrodoméstico"
       },
       "description": {
         "en": "Returns the state, the program and the remaining time, to use in the next actions of the scene.",
-        "fr": "Renvoie l’état, le programme et le temps restant, à réutiliser dans les actions suivantes de la scène."
+        "fr": "Renvoie l’état, le programme et le temps restant, à réutiliser dans les actions suivantes de la scène.",
+        "de": "Liefert Zustand, Programm und Restzeit zur Verwendung in den folgenden Aktionen der Szene.",
+        "es": "Devuelve el estado, el programa y el tiempo restante, para usarlos en las siguientes acciones de la escena."
       },
       "timeout_seconds": 15,
       "fields": [
@@ -739,11 +957,15 @@
           "type": "select",
           "label": {
             "en": "Appliance",
-            "fr": "Appareil"
+            "fr": "Appareil",
+            "de": "Gerät",
+            "es": "Electrodoméstico"
           },
           "description": {
             "en": "The Home Connect appliance the action runs on.",
-            "fr": "L’appareil Home Connect sur lequel l’action s’applique."
+            "fr": "L’appareil Home Connect sur lequel l’action s’applique.",
+            "de": "Das Home Connect-Gerät, auf das die Aktion angewendet wird.",
+            "es": "El electrodoméstico Home Connect sobre el que se aplica la acción."
           },
           "required": true,
           "source": "devices"
@@ -755,7 +977,9 @@
           "type": "string",
           "label": {
             "en": "State",
-            "fr": "État"
+            "fr": "État",
+            "de": "Zustand",
+            "es": "Estado"
           }
         },
         {
@@ -763,7 +987,9 @@
           "type": "string",
           "label": {
             "en": "State (readable)",
-            "fr": "État (lisible)"
+            "fr": "État (lisible)",
+            "de": "Zustand (lesbar)",
+            "es": "Estado (legible)"
           }
         },
         {
@@ -771,7 +997,9 @@
           "type": "string",
           "label": {
             "en": "Program",
-            "fr": "Programme"
+            "fr": "Programme",
+            "de": "Programm",
+            "es": "Programa"
           }
         },
         {
@@ -779,7 +1007,9 @@
           "type": "boolean",
           "label": {
             "en": "Program running",
-            "fr": "Programme en cours"
+            "fr": "Programme en cours",
+            "de": "Programm läuft",
+            "es": "Programa en curso"
           }
         },
         {
@@ -787,7 +1017,9 @@
           "type": "number",
           "label": {
             "en": "Remaining time (s)",
-            "fr": "Temps restant (s)"
+            "fr": "Temps restant (s)",
+            "de": "Restzeit (s)",
+            "es": "Tiempo restante (s)"
           }
         },
         {
@@ -795,7 +1027,9 @@
           "type": "string",
           "label": {
             "en": "Remaining time (readable)",
-            "fr": "Temps restant (lisible)"
+            "fr": "Temps restant (lisible)",
+            "de": "Restzeit (lesbar)",
+            "es": "Tiempo restante (legible)"
           }
         },
         {
@@ -803,7 +1037,9 @@
           "type": "number",
           "label": {
             "en": "Progress (%)",
-            "fr": "Progression (%)"
+            "fr": "Progression (%)",
+            "de": "Fortschritt (%)",
+            "es": "Progreso (%)"
           }
         },
         {
@@ -811,7 +1047,9 @@
           "type": "string",
           "label": {
             "en": "Door",
-            "fr": "Porte"
+            "fr": "Porte",
+            "de": "Tür",
+            "es": "Puerta"
           }
         },
         {
@@ -819,7 +1057,9 @@
           "type": "boolean",
           "label": {
             "en": "Connected",
-            "fr": "Connecté"
+            "fr": "Connecté",
+            "de": "Verbunden",
+            "es": "Conectado"
           }
         },
         {
@@ -827,7 +1067,9 @@
           "type": "string",
           "label": {
             "en": "Summary",
-            "fr": "Résumé"
+            "fr": "Résumé",
+            "de": "Zusammenfassung",
+            "es": "Resumen"
           }
         }
       ]
@@ -838,11 +1080,15 @@
       "key": "appliances",
       "label": {
         "en": "Home Connect",
-        "fr": "Home Connect"
+        "fr": "Home Connect",
+        "de": "Home Connect",
+        "es": "Home Connect"
       },
       "description": {
         "en": "All your appliances and what they are doing, in one card.",
-        "fr": "Tous vos appareils et ce qu’ils font, en une carte."
+        "fr": "Tous vos appareils et ce qu’ils font, en une carte.",
+        "de": "Alle deine Geräte und was sie gerade tun, auf einer Karte.",
+        "es": "Todos sus electrodomésticos y lo que están haciendo, en una tarjeta."
       },
       "icon": "grid",
       "settings": [
@@ -851,11 +1097,15 @@
           "type": "multi_select",
           "label": {
             "en": "Appliances",
-            "fr": "Appareils"
+            "fr": "Appareils",
+            "de": "Geräte",
+            "es": "Electrodomésticos"
           },
           "description": {
             "en": "Leave empty to show every Home Connect appliance.",
-            "fr": "Laissez vide pour afficher tous les appareils Home Connect."
+            "fr": "Laissez vide pour afficher tous les appareils Home Connect.",
+            "de": "Leer lassen, um alle Home Connect-Geräte anzuzeigen.",
+            "es": "Déjelo vacío para mostrar todos los electrodomésticos Home Connect."
           },
           "source": "devices"
         }
@@ -865,11 +1115,15 @@
       "key": "appliance",
       "label": {
         "en": "Appliance",
-        "fr": "Appareil"
+        "fr": "Appareil",
+        "de": "Gerät",
+        "es": "Electrodoméstico"
       },
       "description": {
         "en": "One appliance: state, program, remaining time and controls.",
-        "fr": "Un appareil : état, programme, temps restant et commandes."
+        "fr": "Un appareil : état, programme, temps restant et commandes.",
+        "de": "Ein Gerät: Zustand, Programm, Restzeit und Bedienelemente.",
+        "es": "Un electrodoméstico: estado, programa, tiempo restante y controles."
       },
       "icon": "box",
       "settings": [
@@ -878,7 +1132,9 @@
           "type": "select",
           "label": {
             "en": "Appliance",
-            "fr": "Appareil"
+            "fr": "Appareil",
+            "de": "Gerät",
+            "es": "Electrodoméstico"
           },
           "required": true,
           "source": "devices"
@@ -888,11 +1144,15 @@
           "type": "boolean",
           "label": {
             "en": "Show the start / stop buttons",
-            "fr": "Afficher les boutons démarrer / arrêter"
+            "fr": "Afficher les boutons démarrer / arrêter",
+            "de": "Start-/Stopp-Tasten anzeigen",
+            "es": "Mostrar los botones iniciar / detener"
           },
           "description": {
             "en": "Starting runs the program selected on the appliance; it needs remote start armed there.",
-            "fr": "Le démarrage lance le programme sélectionné sur l’appareil ; le démarrage à distance doit y être activé."
+            "fr": "Le démarrage lance le programme sélectionné sur l’appareil ; le démarrage à distance doit y être activé.",
+            "de": "Der Start führt das am Gerät ausgewählte Programm aus; dafür muss dort der Fernstart aktiviert sein.",
+            "es": "El inicio ejecuta el programa seleccionado en el electrodoméstico; requiere que el inicio remoto esté activado en él."
           },
           "default": true
         }

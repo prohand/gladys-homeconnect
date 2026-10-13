@@ -325,6 +325,8 @@ export class ApplianceRegistry {
             message: {
               en: 'Appliance offline: Home Connect cannot reach it.',
               fr: 'Appareil hors ligne : Home Connect ne le joint pas.',
+              de: 'Gerät offline: Home Connect kann es nicht erreichen.',
+              es: 'Electrodoméstico sin conexión: Home Connect no puede alcanzarlo.',
             },
           }),
     }));

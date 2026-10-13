@@ -32,9 +32,11 @@ test('normalizeConfig clamps the polling interval into the manifest bounds', () 
 });
 
 test('normalizeConfig falls back to the default language on an unknown one', () => {
-  assert.equal(normalizeConfig({ language: 'de' }).language, DEFAULT_CONFIG.language);
+  assert.equal(normalizeConfig({ language: 'it' }).language, DEFAULT_CONFIG.language);
   assert.equal(normalizeConfig({ language: 'en' }).language, 'en');
   assert.equal(normalizeConfig({ language: 'fr' }).language, 'fr');
+  assert.equal(normalizeConfig({ language: 'de' }).language, 'de');
+  assert.equal(normalizeConfig({ language: 'es' }).language, 'es');
 });
 
 test('readTokens only keeps a usable token triplet', () => {

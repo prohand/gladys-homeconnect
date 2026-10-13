@@ -80,6 +80,7 @@ stubbed, `test/helpers/fakeGladys.js` stands in for the SDK.
 
 ## Conventions
 
-Prettier formats, ESLint catches mistakes. Comments explain **why**. User-facing messages are
-bilingual `{ en, fr }`; user docs in `docs/en.md` and `docs/fr.md`, kept in sync. The container
-rootfs is read-only: write nothing.
+Prettier formats, ESLint catches mistakes. Comments explain **why**. User-facing text is
+`{ en, fr, de, es }` (manifest, messages, widgets, catalog feature names); user docs in
+`docs/en.md`, `docs/fr.md`, `docs/de.md` and `docs/es.md`, kept in sync. The container rootfs is
+read-only: write nothing.

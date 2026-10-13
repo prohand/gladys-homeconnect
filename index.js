@@ -232,11 +232,15 @@ gladys.onAction('test_connection', async () => {
     return {
       en: `Connected to Home Connect, but the account has no appliance yet${suffix}`,
       fr: `Connexion à Home Connect réussie, mais aucun appareil n'est associé au compte${suffix}`,
+      de: `Mit Home Connect verbunden, aber dem Konto ist noch kein Gerät zugeordnet${suffix}`,
+      es: `Conectado a Home Connect, pero la cuenta aún no tiene ningún electrodoméstico${suffix}`,
     };
   }
   return {
     en: `Connected: ${appliances.length} appliance(s) — ${names}`,
     fr: `Connexion réussie : ${appliances.length} appareil(s) — ${names}`,
+    de: `Verbunden: ${appliances.length} Gerät(e) — ${names}`,
+    es: `Conectado: ${appliances.length} electrodoméstico(s) — ${names}`,
   };
 });
 
@@ -252,8 +256,10 @@ widgets.register();
 gladys.onAction('refresh_devices', async () => {
   const count = await registry.refresh();
   return {
-    en: `${count} appliance(s) refreshed, check the Discovery tab`,
+    en: `${count} appliance(s) refreshed, check the Discover tab`,
     fr: `${count} appareil(s) actualisé(s), voir l'onglet Découverte`,
+    de: `${count} Gerät(e) aktualisiert, siehe Registerkarte „Entdecken“`,
+    es: `${count} electrodoméstico(s) actualizado(s), consulte la pestaña «Descubrir»`,
   };
 });
 
@@ -281,6 +287,8 @@ gladys.on('connected', async () => {
     await reportStatus(false, {
       en: 'Initialization failed, check the integration logs.',
       fr: "L'initialisation a échoué, consultez les logs de l'intégration.",
+      de: 'Die Initialisierung ist fehlgeschlagen, prüfe die Protokolle der Integration.',
+      es: 'La inicialización ha fallado, consulte los registros de la integración.',
     });
   }
 });
@@ -312,12 +320,16 @@ function scheduleInitialize() {
     await reportStatus(false, {
       en: 'Account connected, reading your appliances…',
       fr: 'Compte connecté, lecture de vos appareils…',
+      de: 'Konto verbunden, deine Geräte werden gelesen…',
+      es: 'Cuenta conectada, leyendo sus electrodomésticos…',
     });
     initialize().catch(async (err) => {
       logger.error('Initialization failed', err);
       await reportStatus(false, {
         en: 'Connected, but reading the account failed. Check the integration logs.',
         fr: "Connexion établie, mais la lecture du compte a échoué. Consultez les logs de l'intégration.",
+        de: 'Verbunden, aber das Lesen des Kontos ist fehlgeschlagen. Prüfe die Protokolle der Integration.',
+        es: 'Conectado, pero la lectura de la cuenta ha fallado. Consulte los registros de la integración.',
       });
     });
   }, 0);
@@ -353,6 +365,8 @@ function startStream() {
         reportStatus(false, {
           en: 'Home Connect authorization expired, click Connect again.',
           fr: 'Autorisation Home Connect expirée, cliquez de nouveau sur Connecter.',
+          de: 'Home Connect-Autorisierung abgelaufen, klicke erneut auf „Verbinden“.',
+          es: 'Autorización de Home Connect caducada, pulse de nuevo «Conectar».',
         }).catch(() => {});
       }
     },

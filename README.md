@@ -10,7 +10,8 @@ Built from the official
 on the JavaScript SDK
 [`@gladysassistant/integration-sdk`](https://github.com/GladysAssistant/integration-sdk-js).
 
-User documentation: [English](./docs/en.md) · [Français](./docs/fr.md).
+User documentation: [English](./docs/en.md) · [Français](./docs/fr.md) ·
+[Deutsch](./docs/de.md) · [Español](./docs/es.md).
 
 ## Design in one paragraph
 
@@ -128,7 +129,7 @@ so the quota-facing behaviour is the one the user asked for.
 │     ├─ catalog.js                  #   Home Connect key -> Gladys feature
 │     ├─ appliance.js                #   appliance snapshot -> device + states
 │     └─ describe.js                 #   appliance snapshot -> readable summary
-├─ docs/en.md, docs/fr.md            # user documentation, re-hosted by Gladys
+├─ docs/{en,fr,de,es}.md             # user documentation, re-hosted by Gladys
 ├─ gladys-assistant-integration.json # manifest (config schema, actions, image)
 ├─ Dockerfile                        # Node 24 Alpine, read-only rootfs ready
 └─ test/                             # `node --test`, no test framework to install

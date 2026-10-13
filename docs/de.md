@@ -1,0 +1,268 @@
+# Home Connect für Gladys Assistant
+
+Diese Integration verbindet Gladys mit **Home Connect**, der Cloud-Plattform
+hinter den Hausgeräten von Bosch, Siemens, Neff, Gaggenau, Balay, Constructa,
+Profilo und Thermador.
+
+Jedes Gerät, das in der Home Connect-App erscheint, erscheint auch in Gladys:
+Geschirrspüler, Waschmaschinen, Trockner, Waschtrockner, Backöfen, Mikrowellen,
+Wärmeschubladen, Kochfelder, Dunstabzugshauben, Kühlschränke, Gefrierschränke,
+Weinkühlschränke, Kaffeevollautomaten, Reinigungsroboter und Küchenmaschinen.
+
+> **Es gibt keinen lokalen Modus.** Home Connect-Geräte sprechen mit der
+> BSH-Cloud, und nur mit ihr. Fällt deine Internetverbindung aus, fällt auch
+> diese Integration aus. Das ist eine Eigenschaft der Geräte, nicht der
+> Integration.
+
+## 1. Eine Home Connect-Entwickleranwendung anlegen
+
+Die Home Connect-API ist kostenlos, aber jede Gladys-Instanz braucht ihre
+**eigenen** Anwendungszugangsdaten — BSH vergibt sie pro Entwickler, nicht pro
+Produkt.
+
+1. Lege ein kostenloses Konto im
+   [Home Connect-Entwicklerportal](https://developer.home-connect.com/) an und
+   melde dich an. Verwende **dieselbe E-Mail-Adresse wie für dein Konto
+   in der Home Connect-App**: Das Portal verknüpft beide, und erst dann siehst du deine eigenen Geräte.
+2. Geh zu **Applications → Register Application** und fülle aus:
+   - **Application ID**: beliebig, z. B. `gladys`.
+   - **OAuth Flow**: **Authorization Code Grant Flow**.
+   - **Home Connect User Account for Testing**: die E-Mail-Adresse deines Kontos
+     in der Home Connect-App.
+   - **Redirect URI**: siehe Schritt 2 unten — Gladys muss sie dir zuerst
+     mitteilen.
+   - **Success Redirect URI**: leer lassen.
+3. Nach der Registrierung zeigt das Portal deine **Client ID** und dein **Client
+   Secret** an.
+
+## 2. Die Integration in Gladys konfigurieren
+
+1. Installiere die Integration und öffne dann ihre Registerkarte
+   **Konfiguration**.
+2. Füge die **Client ID** und das **Client Secret** ein.
+3. Klicke auf **Konfiguration speichern** und dann im Feld
+   _Home Connect-Konto_ auf **Verbinden**. Gladys öffnet die Anmeldeseite von
+   Home Connect.
+
+Antwortet Home Connect mit _„redirect_uri mismatch“_, ist die URI, die Gladys
+verwendet, nicht die im Portal registrierte. Klicke einmal auf die
+Schaltfläche **Verbindung testen**: Sie zeigt die genaue Weiterleitungs-URI an,
+die Gladys verwendet hat. Füge sie in das Feld **Redirect URI** deiner
+Entwickleranwendung ein, speichere im Portal und klicke erneut auf
+**Verbinden**.
+
+4. Melde dich mit deinem Home Connect-Konto an und erlaube die
+   angeforderten Berechtigungen.
+5. Öffne zurück in Gladys die Registerkarte **Entdecken**: Deine Geräte sind
+   dort aufgelistet und können hinzugefügt werden.
+
+## 3. Was du pro Gerät erhältst
+
+Die Funktionen werden aus dem gebildet, was jedes Gerät tatsächlich meldet,
+deshalb erhalten keine zwei Geräte dieselbe Liste. Typischerweise:
+
+| Funktion                                            | Art        | Geräte                         |
+| --------------------------------------------------- | ---------- | ------------------------------ |
+| Ein/Aus                                             | Ein/Aus    | die meisten Geräte             |
+| Programm läuft                                      | Ein/Aus    | Geräte mit Programmen          |
+| Aktives Programm / Ausgewähltes Programm            | Text       | Geräte mit Programmen          |
+| Betriebszustand (`Run`, `Ready`, `Finished`…)       | Text       | alle                           |
+| Restzeit, verstrichene Zeit, Fortschritt            | Sensor     | Geräte mit Programmen          |
+| Tür                                                 | Öffnung    | die meisten Geräte             |
+| Fernstart erlaubt, Fernsteuerung, Bedienung vor Ort | Sensor     | die meisten Geräte             |
+| Solltemperatur Kühlschrank / Gefrierfach            | Thermostat | Kühlschränke, Gefrierschränke  |
+| Superkühlen, Eco-Modus, Urlaubsmodus                | Ein/Aus    | Kühlgeräte                     |
+| Garraumtemperatur                                   | Temperatur | Backöfen                       |
+| Beleuchtung, Ambientebeleuchtung, Helligkeit        | Licht      | Hauben, Backöfen, Kühlschränke |
+| Kindersicherung                                     | Sperre     | Geräte, die sie unterstützen   |
+| Getränkezähler                                      | Zähler     | Kaffeevollautomaten            |
+| Warnungen (Salz knapp, Wassertank leer, Filter…)    | binär      | je nach Gerätefamilie          |
+| Verbunden                                           | binär      | alle                           |
+
+**Tür** folgt der Gladys-Konvention für Öffnungssensoren: Die Funktion zeigt
+_Geschlossen_, wenn die Tür zu ist, und _Offen_, wenn nicht — eine verriegelte
+Tür gilt als geschlossen. **Warnungen** zeigen _Aus_, bis Home Connect sie
+tatsächlich auslöst; ein Geschirrspüler, dem nie das Salz ausging, zeigt also
+eine zurückgesetzte Warnung statt eines leeren Werts.
+
+### Ein Programm starten
+
+**Programm läuft** startet das Programm, das **gerade am Gerät** (oder in der
+Home Connect-App) **ausgewählt ist** — es wählt keines für dich aus. Das
+entspricht dem, was die Geräte erlauben: Ein Fernstart ist ein Auslöser, keine
+Programmauswahl.
+
+Damit es funktioniert, muss am Gerät der **Fernstart aktiviert** sein: Bei den
+meisten Modellen hältst du die Taste _Fernstart_ gedrückt, bis das Display es
+bestätigt. Ohne ihn lehnt Home Connect den Befehl ab und Gladys zeigt die
+Ablehnungsmeldung an.
+
+Das Ausschalten von **Programm läuft** bricht das laufende Programm ab.
+
+## 4. Dashboard, Szenen und Auslöser
+
+Seit **Gladys 5.1** kann eine Integration eigene Karten auf das Dashboard
+bringen und den Szeneneditor erweitern. Home Connect nutzt alle drei
+Möglichkeiten.
+
+### Die Dashboard-Karten
+
+**Dashboard → Bearbeiten → Neues Widget**, Kategorie Integrationen:
+
+- **Home Connect** — alle Geräte auf einer Karte, eine Zeile pro Gerät, mit dem,
+  was es gerade tut („Läuft · Auto2 · 30 min“). Was gerade arbeitet, erscheint
+  zuerst. Lass die Einstellung _Geräte_ leer, um alle anzuzeigen, oder
+  hake die an, die dich interessieren.
+- **Gerät** — ein einzelnes Gerät: Zustand, Programm, Tür, Restzeit,
+  Fortschritt und die Tasten _Starten_ / _Pausieren_ / _Stoppen_. Die Tasten
+  folgen dem Gerät: Ein ruhendes Gerät bietet _Starten_ an, ein laufendes
+  _Pausieren_ und _Stoppen_. Deaktiviere _Start-/Stopp-Tasten anzeigen_ für
+  eine reine Anzeigekarte.
+
+Restzeit und Fortschritt sind an die Funktionen des Geräts selbst gebunden: Sie
+bewegen sich in Echtzeit, ohne Neuladen.
+
+### Die Szenenauslöser
+
+In einer Szene: **Auslöser hinzufügen → Integrationen**:
+
+| Auslöser                       | Wird ausgelöst, wenn                                            |
+| ------------------------------ | --------------------------------------------------------------- |
+| Ein Programm wurde gestartet   | ein Gerät einen Zyklus startet (oder einen Startaufschub plant) |
+| Ein Programm ist beendet       | ein Zyklus normal endet                                         |
+| Ein Programm wurde abgebrochen | ein Zyklus vor dem Ende gestoppt wird                           |
+| Ein Gerät meldet etwas         | Salz knapp, Wassertank leer, Filter gesättigt, Türalarm…        |
+
+Lass das Feld _Gerät_ leer, um auf jedes Gerät zu reagieren. In den
+Aktionen der Szene stellt der Auslöser `{{triggerEvent.data.appliance_name}}`,
+`{{triggerEvent.data.program}}` und, bei Benachrichtigungen,
+`{{triggerEvent.data.notification_name}}` bereit — genug, um „Der
+Geschirrspüler hat das Programm Auto2 beendet“ in eine Benachrichtigung zu
+schreiben.
+
+Eine Warnung, die **zurückgesetzt** wird, löst nichts aus: Nur der Moment, in dem
+sie auftritt, ist ein Ereignis.
+
+### Die Szenenaktionen
+
+In einer Szene: **Neue Aktion → Integrationen**:
+
+| Aktion                        | Wirkung                                                         |
+| ----------------------------- | --------------------------------------------------------------- |
+| Ausgewähltes Programm starten | startet das bereits am Gerät gewählte Programm                  |
+| Laufendes Programm stoppen    | bricht den Zyklus ab                                            |
+| Programm pausieren            | Geräte, die den Pausenbefehl unterstützen                       |
+| Programm fortsetzen           | setzt einen pausierten Zyklus fort                              |
+| Gerätestatus lesen            | steuert nichts: liefert Zustand, Programm und verbleibende Zeit |
+
+**Gerätestatus lesen** ist für die Aktionen gedacht, die in der Szene darauf
+folgen: Es liefert `state`, `program`, `running`, `remaining_seconds`,
+`remaining_label`, `progress`, `door`, `connected` und `summary` (einen
+versandfertigen Satz). Es liest, was die Integration bereits im Speicher hält:
+keine Home Connect-Anfrage, also kein verbrauchtes Kontingent.
+
+Es gelten dieselben Grenzen wie für die Funktion **Programm läuft**: Der Start
+führt das am Gerät ausgewählte Programm aus, und dort muss der Fernstart
+aktiviert sein.
+
+## 5. Wie sie aktuell bleibt
+
+Die Integration hält einen dauerhaften **Ereignisstrom** zu Home Connect offen,
+sodass eine sich öffnende Tür oder ein endendes Programm Gladys in etwa einer
+Sekunde erreicht — einschließlich Änderungen direkt am Gerät.
+
+Das Abfragen (standardmäßig alle 15 Minuten, zwischen 15 und 60 Minuten) läuft
+dahinter als Sicherheitsnetz, denn Home Connect schließt den Strom etwa einmal
+am Tag.
+
+### Anfragebudget
+
+Home Connect erlaubt **1.000 Anfragen pro Tag** (und 50 pro Minute) pro
+Entwickleranwendung und Konto. Die Integration verbraucht sie so, pro Gerät:
+
+| Wann                                                          | Anfragen                                  |
+| ------------------------------------------------------------- | ----------------------------------------- |
+| Jede Abfrage, Ereignisstrom intakt                            | 1 (nur Status)                            |
+| Jede Abfrage, Ereignisstrom unterbrochen oder 3 Minuten still | 5 (vollständiges Lesen)                   |
+| Jede Abfrage, der Status hat sich ohne Ereignis geändert      | 1 + 5 (Prüfung, dann vollständiges Lesen) |
+| Jede Wiederverbindung des Ereignisstroms (etwa 1 pro Tag)     | 4, plus 1 für die Geräteliste             |
+| Ein Befehl (Schalter, Solltemperatur, Programm)               | 1 oder 2                                  |
+
+Mit den standardmäßigen 15 Minuten und einem intakten Strom sind das etwa **100
+Anfragen pro Tag und Gerät**. Bleibt der Strom unterbrochen, kostet das Abfragen
+allein 480 pro Tag und Gerät bei 15 Minuten — erhöhe das Intervall, wenn
+du mehr als ein oder zwei Geräte hast und der Strom immer wieder ausfällt.
+
+Ein Wert, der sich nicht ändert, wird trotzdem **mindestens einmal pro Stunde**
+erneut an Gladys gesendet. Gladys erklärt einen Zustand nach einer einstellbaren
+Frist für veraltet (standardmäßig 48 Stunden, unter **Einstellungen → System**)
+und zeigt dann „Kein aktueller Wert“ auf dem Dashboard an. Ein Gerät, das tagelang
+im selben Zustand bleibt — verbunden, Salzbehälter voll, kein Programm aktiv —,
+muss also immer wieder sagen, dass sich nichts geändert hat. Diese Wiederholungen
+kosten keine Home Connect-Anfrage.
+
+## 6. Testen ohne Gerät
+
+Aktiviere in der Konfiguration **Home Connect-Simulator verwenden**. Die
+Integration spricht dann mit `simulator.home-connect.com`, das dieselbe API für
+die virtuellen Geräte deines Entwicklerkontos bereitstellt. Denke daran, es
+danach wieder auszuschalten.
+
+## 7. Fehlerbehebung
+
+**„Gib deine Home Connect-Client ID und dein Client Secret ein“** — die
+Zugangsdaten fehlen oder sind leer.
+
+**„Klicke auf „Verbinden“, um dein Home Connect-Konto zu verknüpfen“** — die
+Zugangsdaten sind vorhanden, aber der OAuth-Ablauf wurde nie abgeschlossen.
+
+**„Die Integration hat die Verbindung abgelehnt. Bitte erneut versuchen.“** im
+Rückruffenster der Autorisierung — der Austausch des Autorisierungscodes ist
+fehlgeschlagen. Öffne die Protokolle der Integration: Die Meldung dort
+enthält den genauen Grund, den Home Connect angegeben hat (fehlendes Client
+Secret, im Entwicklerportal nicht registrierte Weiterleitungs-URI, bereits
+verwendeter Code…). Wurde die Integration oder der Rechner neu gestartet,
+während du dich bei Home Connect angemeldet hast, klicke einfach erneut
+auf **Verbinden** — eine Autorisierung bleibt fünfzehn Minuten gültig.
+
+Nach einem erfolgreichen **Verbinden** schließt sich das Fenster sofort und der
+Verbindungsstatus lautet „Konto verbunden, deine Geräte werden gelesen…“: Das
+Konto wird im Hintergrund gelesen, was einige Sekunden pro Gerät dauert.
+
+**„Home Connect-Autorisierung abgelaufen, klicke erneut auf „Verbinden““** —
+das Aktualisierungstoken wurde abgelehnt. Es läuft nach etwa zwei Monaten ohne
+Nutzung ab und wird auch widerrufen, wenn du Gladys aus den autorisierten
+Anwendungen deines Home Connect-Kontos entfernen. Klicke erneut auf
+**Verbinden**.
+
+**„Home Connect konnte nicht gelesen werden, automatischer neuer Versuch“** —
+das Konto konnte nicht gelesen werden, meist weil das Netzwerk beim Start der
+Integration noch nicht bereit war. Die Echtzeit-Ereignisse laufen bereits; die
+Integration liest das Konto nach 1, nach 5 und dann alle 15 Minuten erneut, und
+die Meldung verschwindet von selbst.
+
+**„Home Connect-Kontingent erreicht“** — zu viele Anfragen. Die Integration
+hält sich von selbst zurück; erhöhe das Aktualisierungsintervall, wenn es
+immer wieder vorkommt.
+
+**Eine Dashboard-Karte zeigt „deine Home Connect-Geräte werden gelesen…“** — die
+Integration hat das Konto noch nicht gelesen (kürzlicher Neustart, Kontingent
+erreicht oder Home Connect beim Start nicht erreichbar). Die Karte löst das
+Lesen selbst aus und füllt sich innerhalb von Sekunden; bleibt die Meldung,
+prüfe den Verbindungsstatus in der Konfiguration der Integration.
+
+**Eine Karte zeigt „This appliance no longer exists in Gladys“** — das in den
+Karteneinstellungen gewählte Gerät wurde aus Gladys gelöscht oder aus dem Home
+Connect-Konto entfernt. Öffne die Karteneinstellungen erneut und wähle ein anderes.
+
+**Ein Gerät zeigt ein orangefarbenes Abzeichen „Nicht erreichbar“** — Home
+Connect selbst erreicht es nicht. Prüfe in der Home Connect-App, ob es
+eingeschaltet und mit deinem WLAN verbunden ist.
+
+**Ein Befehl wird abgelehnt** — Gladys zeigt den von Home Connect angegebenen
+Grund an. Häufig sind es _Fernstart nicht aktiviert_, _Tür offen_ und _Gerät
+ausgeschaltet_.
+
+Die Integration protokolliert alles, was sie tut. Setze `LOG_LEVEL=debug`
+und lies die Protokolle der Integration in der Gladys-Oberfläche, um alle
+Details zu sehen.

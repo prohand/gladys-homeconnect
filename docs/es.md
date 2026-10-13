@@ -1,0 +1,267 @@
+# Home Connect para Gladys Assistant
+
+Esta integración conecta Gladys con **Home Connect**, la plataforma en la nube
+que hay detrás de los electrodomésticos Bosch, Siemens, Neff, Gaggenau, Balay,
+Constructa, Profilo y Thermador.
+
+Todo electrodoméstico que aparece en la aplicación Home Connect aparece en
+Gladys: lavavajillas, lavadoras, secadoras, lavadoras-secadoras, hornos,
+microondas, cajones calientaplatos, placas, campanas, frigoríficos,
+congeladores, vinotecas, cafeteras, robots de limpieza y robots de cocina.
+
+> **No existe modo local.** Los electrodomésticos Home Connect hablan con la nube
+> de BSH, y solo con ella. Si su conexión a internet cae, esta integración cae.
+> Es una propiedad de los electrodomésticos, no de la integración.
+
+## 1. Crear una aplicación de desarrollador de Home Connect
+
+La API de Home Connect es gratuita, pero cada instancia de Gladys necesita sus
+**propias** credenciales de aplicación: BSH las concede por desarrollador, no
+por producto.
+
+1. Cree una cuenta gratuita en el
+   [portal para desarrolladores de Home Connect](https://developer.home-connect.com/)
+   e inicie sesión. Use **la misma dirección de correo electrónico que la de su
+   cuenta de la aplicación Home Connect**: el portal vincula ambas, y solo
+   entonces podrá ver sus propios electrodomésticos.
+2. Vaya a **Applications → Register Application** y rellene:
+   - **Application ID**: lo que quiera, p. ej. `gladys`.
+   - **OAuth Flow**: **Authorization Code Grant Flow**.
+   - **Home Connect User Account for Testing**: la dirección de correo de su
+     cuenta de la aplicación Home Connect.
+   - **Redirect URI**: consulte el paso 2 más abajo; primero Gladys tiene que
+     indicársela.
+   - **Success Redirect URI**: déjelo vacío.
+3. Una vez registrada, el portal muestra su **Client ID** y su **Client
+   Secret**.
+
+## 2. Configurar la integración en Gladys
+
+1. Instale la integración y abra su pestaña **Configuración**.
+2. Pegue el **Client ID** y el **Client Secret**.
+3. Pulse **Guardar configuración** y después **Conectar** en el campo
+   _Cuenta de Home Connect_. Gladys abre la página de inicio de sesión de Home
+   Connect.
+
+Si Home Connect responde _«redirect_uri mismatch»_, la URI que usa Gladys no es
+la registrada en el portal. Pulse una vez el botón **Probar la conexión**:
+muestra la URI de redirección exacta que ha usado Gladys. Péguela en el campo
+**Redirect URI** de su aplicación de desarrollador, guarde en el portal y pulse
+**Conectar** de nuevo.
+
+4. Inicie sesión con su cuenta de Home Connect y conceda los permisos
+   solicitados.
+5. De vuelta en Gladys, abra la pestaña **Descubrir**: sus electrodomésticos
+   aparecen en la lista, listos para añadirse.
+
+## 3. Lo que obtiene por electrodoméstico
+
+Las funciones se construyen a partir de lo que cada electrodoméstico informa
+realmente, así que no hay dos electrodomésticos con la misma lista. Lo habitual:
+
+| Función                                                    | Tipo        | Electrodomésticos                    |
+| ---------------------------------------------------------- | ----------- | ------------------------------------ |
+| Encendido                                                  | sí/no       | la mayoría                           |
+| Programa en curso                                          | sí/no       | los que ejecutan programas           |
+| Programa activo / Programa seleccionado                    | texto       | los que ejecutan programas           |
+| Estado de funcionamiento (`Run`, `Ready`, `Finished`…)     | texto       | todos                                |
+| Tiempo restante, tiempo transcurrido, progreso             | sensor      | los que ejecutan programas           |
+| Puerta                                                     | apertura    | la mayoría                           |
+| Inicio remoto permitido, control remoto, uso en el aparato | sensor      | la mayoría                           |
+| Consigna del frigorífico / congelador                      | termostato  | frigoríficos, congeladores           |
+| Superrefrigeración, modo eco, modo vacaciones              | sí/no       | refrigeración                        |
+| Temperatura del horno                                      | temperatura | hornos                               |
+| Iluminación, iluminación ambiental, brillo                 | luz         | campanas, hornos, frigoríficos       |
+| Bloqueo infantil                                           | bloqueo     | los que lo admiten                   |
+| Contadores de bebidas                                      | contador    | cafeteras                            |
+| Alertas (poca sal, depósito de agua vacío, filtro…)        | binario     | según la familia de electrodoméstico |
+| Conectado                                                  | binario     | todos                                |
+
+**Puerta** sigue la convención de Gladys para los sensores de apertura: la
+función indica _Cerrada_ cuando la puerta está cerrada y _Abierta_ cuando no lo
+está; una puerta bloqueada cuenta como cerrada. Las **alertas** indican
+_Apagado_ hasta que Home Connect las activa realmente, de modo que un
+lavavajillas que nunca se quedó sin sal muestra una alerta desactivada en lugar
+de un valor vacío.
+
+### Iniciar un programa
+
+**Programa en curso** inicia el programa **seleccionado en ese momento en el
+electrodoméstico** (o en la aplicación Home Connect): no elige uno por usted.
+Refleja lo que permiten los electrodomésticos: un inicio remoto es un
+disparador, no un selector de programas.
+
+Para que funcione, el electrodoméstico debe tener **el inicio remoto
+activado**: en la mayoría de los modelos se mantiene pulsado el botón _Inicio
+remoto_ hasta que la pantalla lo confirma. Sin él, Home Connect rechaza la orden
+y Gladys muestra el mensaje de rechazo.
+
+Desactivar **Programa en curso** interrumpe el programa en curso.
+
+## 4. Panel, escenas y activadores
+
+Desde **Gladys 5.1**, una integración puede añadir sus propias tarjetas al
+panel y ampliar el editor de escenas. Home Connect usa las tres posibilidades.
+
+### Las tarjetas del panel
+
+**Panel → Editar → Nuevo widget**, categoría integraciones:
+
+- **Home Connect**: todos los electrodomésticos en una tarjeta, una fila por
+  cada uno, con lo que está haciendo («En marcha · Auto2 · 30 min»). Lo que está
+  funcionando aparece primero. Deje vacío el ajuste _Electrodomésticos_ para
+  mostrarlos todos, o marque los que le interesen.
+- **Electrodoméstico**: un único electrodoméstico: estado, programa, puerta,
+  tiempo restante, progreso y los botones _Iniciar_ / _Pausar_ / _Detener_. Los
+  botones siguen al electrodoméstico: uno inactivo ofrece _Iniciar_, uno en
+  marcha _Pausar_ y _Detener_. Desmarque _Mostrar los botones iniciar / detener_
+  para una tarjeta de solo lectura.
+
+El tiempo restante y el progreso están vinculados a las funciones del propio
+electrodoméstico: se actualizan en tiempo real, sin recargar.
+
+### Los activadores de escena
+
+En una escena, **Añadir activador → Integraciones**:
+
+| Activador                      | Se dispara cuando                                                    |
+| ------------------------------ | -------------------------------------------------------------------- |
+| Se ha iniciado un programa     | un electrodoméstico inicia un ciclo (o programa un inicio diferido)  |
+| Ha terminado un programa       | un ciclo termina con normalidad                                      |
+| Se ha interrumpido un programa | un ciclo se detiene antes del final                                  |
+| Un electrodoméstico ha avisado | poca sal, depósito de agua vacío, filtro saturado, alarma de puerta… |
+
+Deje vacío el campo _Electrodoméstico_ para reaccionar a cualquiera de ellos. En
+las acciones de la escena, el activador expone
+`{{triggerEvent.data.appliance_name}}`, `{{triggerEvent.data.program}}` y, para
+las notificaciones, `{{triggerEvent.data.notification_name}}`: suficiente para
+escribir «El lavavajillas ha terminado el programa Auto2» en una notificación.
+
+Una alerta que **se desactiva** no dispara nada: solo el momento en que se
+activa es un evento.
+
+### Las acciones de escena
+
+En una escena, **Nueva acción → Integraciones**:
+
+| Acción                              | Efecto                                                                 |
+| ----------------------------------- | ---------------------------------------------------------------------- |
+| Iniciar el programa seleccionado    | ejecuta el programa ya elegido en el electrodoméstico                  |
+| Detener el programa en curso        | interrumpe el ciclo                                                    |
+| Pausar el programa                  | electrodomésticos que aceptan la orden de pausa                        |
+| Reanudar el programa                | reanuda un ciclo en pausa                                              |
+| Leer el estado del electrodoméstico | no controla nada: devuelve el estado, el programa y el tiempo restante |
+
+**Leer el estado del electrodoméstico** está pensada para las acciones que la
+siguen en la escena: devuelve `state`, `program`, `running`,
+`remaining_seconds`, `remaining_label`, `progress`, `door`, `connected` y
+`summary` (una frase lista para enviar). Lee lo que la integración ya tiene en
+memoria: ninguna petición a Home Connect, por lo tanto ninguna cuota gastada.
+
+Se aplican los mismos límites que a la función **Programa en curso**: el inicio
+ejecuta el programa seleccionado en el electrodoméstico, y el inicio remoto
+debe estar activado en él.
+
+## 5. Cómo se mantiene al día
+
+La integración mantiene abierto un **flujo de eventos** permanente con Home
+Connect, de modo que una puerta que se abre o un programa que termina llega a
+Gladys en aproximadamente un segundo, incluidos los cambios hechos en el propio
+electrodoméstico.
+
+El sondeo (cada 15 minutos por defecto, entre 15 y 60 minutos) funciona detrás
+como red de seguridad, porque Home Connect cierra el flujo aproximadamente una
+vez al día.
+
+### Presupuesto de peticiones
+
+Home Connect permite **1.000 peticiones al día** (y 50 por minuto) por
+aplicación de desarrollador y cuenta. La integración las gasta así, por
+electrodoméstico:
+
+| Cuándo                                                              | Peticiones                                  |
+| ------------------------------------------------------------------- | ------------------------------------------- |
+| Cada sondeo, flujo de eventos en buen estado                        | 1 (solo estados)                            |
+| Cada sondeo, flujo de eventos caído o en silencio durante 3 minutos | 5 (lectura completa)                        |
+| Cada sondeo, los estados han cambiado sin evento                    | 1 + 5 (comprobación y lectura completa)     |
+| Cada reconexión del flujo de eventos (aprox. 1 al día)              | 4, más 1 para la lista de electrodomésticos |
+| Una orden (interruptor, consigna, programa)                         | 1 o 2                                       |
+
+Con los 15 minutos por defecto y un flujo en buen estado, son unas **100
+peticiones al día por electrodoméstico**. Si el flujo sigue caído, el sondeo por
+sí solo cuesta 480 al día por electrodoméstico a 15 minutos: aumente el
+intervalo si tiene más de uno o dos electrodomésticos y el flujo falla una y
+otra vez.
+
+Un valor que no cambia se vuelve a enviar a Gladys **al menos una vez por
+hora**. Gladys considera un estado obsoleto tras un plazo configurable (48 horas
+por defecto, en **Configuración → Sistema**) y entonces muestra «Sin valor
+reciente» en el panel; un electrodoméstico que permanece días en el mismo
+estado (conectado, depósito de sal lleno, ningún programa en curso) tiene que
+seguir diciendo que nada ha cambiado. Esas repeticiones no cuestan ninguna
+petición a Home Connect.
+
+## 6. Probar sin electrodoméstico
+
+Active **Usar el simulador de Home Connect** en la configuración. La integración
+habla entonces con `simulator.home-connect.com`, que ofrece la misma API con los
+electrodomésticos virtuales de su cuenta de desarrollador. Recuerde desactivarlo
+después.
+
+## 7. Solución de problemas
+
+**«Introduzca su Client ID y su Client Secret de Home Connect»**: faltan las
+credenciales o están vacías.
+
+**«Pulse «Conectar» para vincular su cuenta de Home Connect»**: las credenciales
+están, pero el flujo OAuth nunca se completó.
+
+**«La integración rechazó la conexión. Vuelva a intentarlo.»** en la ventana de
+retorno de la autorización: ha fallado el intercambio del código de
+autorización. Abra los registros de la integración: el mensaje que aparece allí
+contiene el motivo exacto que dio Home Connect (falta el Client Secret, URI de
+redirección no registrada en el portal para desarrolladores, código ya
+usado…). Si la integración o la máquina se reiniciaron mientras iniciaba sesión
+en Home Connect, simplemente pulse **Conectar** de nuevo: una autorización sigue
+siendo válida durante quince minutos.
+
+Tras un **Conectar** correcto, la ventana se cierra enseguida y el estado de la
+conexión indica «Cuenta conectada, leyendo sus electrodomésticos…»: la cuenta se
+lee en segundo plano, lo que lleva unos segundos por electrodoméstico.
+
+**«Autorización de Home Connect caducada, pulse de nuevo «Conectar»»**: el token
+de actualización ha sido rechazado. Caduca tras unos dos meses sin uso, y
+también se revoca cuando elimina Gladys de las aplicaciones autorizadas de su
+cuenta de Home Connect. Pulse **Conectar** de nuevo.
+
+**«No se ha podido leer Home Connect, nuevo intento automático»**: no se ha
+podido leer la cuenta, normalmente porque la red aún no estaba disponible cuando
+arrancó la integración. Los eventos en tiempo real ya funcionan; la integración
+vuelve a leer la cuenta al cabo de 1 minuto, de 5 y después cada 15 minutos, y
+el mensaje desaparece por sí solo.
+
+**«Cuota de Home Connect alcanzada»**: demasiadas peticiones. La integración se
+modera por sí sola; aumente el intervalo de actualización si sigue ocurriendo.
+
+**Una tarjeta del panel indica «Leyendo sus electrodomésticos Home Connect…»**:
+la integración aún no ha leído la cuenta (reinicio reciente, cuota alcanzada o
+Home Connect inaccesible al arrancar). La tarjeta lanza la lectura por sí misma
+y se rellena en unos segundos; si el mensaje persiste, compruebe el estado de la
+conexión en la configuración de la integración.
+
+**Una tarjeta indica «This appliance no longer exists in Gladys»**: el
+electrodoméstico elegido en los ajustes de la tarjeta se ha eliminado de Gladys
+o de la cuenta de Home Connect. Vuelva a abrir los ajustes de la tarjeta y elija
+otro.
+
+**Un electrodoméstico muestra una insignia naranja «Inaccesible»**: el propio
+Home Connect no puede alcanzarlo. Compruebe en la aplicación Home Connect que
+está encendido y conectado a su wifi.
+
+**Se rechaza una orden**: Gladys muestra el motivo que dio Home Connect. Los más
+frecuentes son _inicio remoto no activado_, _puerta abierta_ y _electrodoméstico
+apagado_.
+
+La integración registra todo lo que hace. Defina `LOG_LEVEL=debug` y lea los
+registros de la integración desde la interfaz de Gladys para ver todos los
+detalles.

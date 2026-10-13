@@ -35,7 +35,7 @@ application credentials — BSH grants them per developer, not per product.
 
 1. Install the integration, then open its **Configuration** tab.
 2. Paste the **Client ID** and the **Client Secret**.
-3. Click **Save**, then click **Connect** on the _Home Connect account_ field.
+3. Click **Save configuration**, then click **Connect** on the _Home Connect account_ field.
    Gladys opens the Home Connect sign-in page.
 
 If Home Connect answers _"redirect_uri mismatch"_, the URI Gladys uses is not
@@ -45,8 +45,8 @@ field of your developer application, save on the portal, and click **Connect**
 again.
 
 4. Sign in with your Home Connect account and allow the requested permissions.
-5. Back in Gladys, open the **Discovery** tab: your appliances are listed, ready
-   to be added.
+5. Back in Gladys, open the **Discover** tab: your appliances are listed, ready
+   to be added with **Add to Gladys**.
 
 ## 3. What you get per appliance
 
@@ -96,7 +96,7 @@ extend the scene editor. Home Connect uses all three.
 
 ### The dashboard cards
 
-**Dashboard → Edit → Add a box**, integrations category:
+**Dashboard → Edit → New widget**, **Integration widgets** section:
 
 - **Home Connect** — every appliance in one card, one row each, with what it is
   doing ("Running · Auto2 · 30 min"). Whatever is working shows up first. Leave
@@ -112,7 +112,7 @@ in real time, with no reload.
 
 ### The scene triggers
 
-In a scene, **Add a trigger → Integrations**:
+In a scene, **Add trigger → Integrations**:
 
 | Trigger                            | Fires when                                                 |
 | ---------------------------------- | ---------------------------------------------------------- |
@@ -132,7 +132,7 @@ event.
 
 ### The scene actions
 
-In a scene, **Add an action → Integrations**:
+In a scene, **New action → Integrations**:
 
 | Action                     | Effect                                                     |
 | -------------------------- | ---------------------------------------------------------- |
@@ -187,7 +187,7 @@ Those re-statements cost no Home Connect request.
 
 ## 6. Testing without an appliance
 
-Enable **Use the Home Connect simulator** in the configuration. The integration
+Enable **Use the Home Connect simulator** in the integration's **Configuration** tab. The integration
 then talks to `simulator.home-connect.com`, which serves the same API against
 the virtual appliances of your developer account. Remember to turn it back off.
 
@@ -200,8 +200,8 @@ missing or empty.
 there, but the OAuth flow was never completed.
 
 **"The integration refused the connection. Try again."** in the authorization
-callback window — the authorization code exchange failed. Open the integration
-logs: the message there carries the exact reason Home Connect gave (missing
+callback window — the authorization code exchange failed. Open the integration's
+**Logs** tab: the message there carries the exact reason Home Connect gave (missing
 Client Secret, redirect URI not registered in the developer portal, code already
 used…). If the integration or the machine restarted while you were signing in at
 Home Connect, simply click **Connect** again — an authorization stays valid for
@@ -228,13 +228,13 @@ off on its own; raise the refresh interval if it keeps happening.
 integration has not read the account yet (recent restart, rate limit reached, or
 Home Connect unreachable at startup). The card triggers the read itself and
 fills in within seconds; if the message stays, check the connection status in the
-integration settings.
+integration's **Configuration** tab.
 
 **A card reads "This appliance no longer exists in Gladys"** — the appliance
 picked in the card settings was deleted from Gladys or removed from the Home
 Connect account. Reopen the card settings and pick another one.
 
-**An appliance shows an orange "unreachable" badge** — Home Connect itself
+**An appliance shows an orange **Unreachable** badge** — Home Connect itself
 cannot reach it. Check that it is powered on and connected to your Wi-Fi, in the
 Home Connect app.
 
@@ -243,4 +243,4 @@ frequent ones are _remote start not enabled_, _door open_ and _appliance
 powered off_.
 
 The integration logs everything it does. Set `LOG_LEVEL=debug` and read the
-integration logs from the Gladys interface for the full detail.
+integration's **Logs** tab for the full detail.

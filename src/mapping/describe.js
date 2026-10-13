@@ -36,25 +36,45 @@ const COLOR = {
 
 /** Operation states, short name -> label + the color they deserve on a card. */
 const OPERATION_STATES = {
-  Inactive: { en: 'Off', fr: 'Éteint', color: COLOR.NEUTRAL },
-  Ready: { en: 'Ready', fr: 'Prêt', color: COLOR.NEUTRAL },
-  DelayedStart: { en: 'Delayed start', fr: 'Départ différé', color: COLOR.PRIMARY },
-  Run: { en: 'Running', fr: 'En marche', color: COLOR.PRIMARY },
-  Pause: { en: 'Paused', fr: 'En pause', color: COLOR.WARNING },
-  ActionRequired: { en: 'Action required', fr: 'Action requise', color: COLOR.WARNING },
-  Finished: { en: 'Finished', fr: 'Terminé', color: COLOR.SUCCESS },
-  Error: { en: 'Error', fr: 'Erreur', color: COLOR.DANGER },
-  Aborting: { en: 'Stopping', fr: 'Arrêt en cours', color: COLOR.WARNING },
+  Inactive: { en: 'Off', fr: 'Éteint', de: 'Aus', es: 'Apagado', color: COLOR.NEUTRAL },
+  Ready: { en: 'Ready', fr: 'Prêt', de: 'Bereit', es: 'Listo', color: COLOR.NEUTRAL },
+  DelayedStart: {
+    en: 'Delayed start',
+    fr: 'Départ différé',
+    de: 'Startaufschub',
+    es: 'Inicio diferido',
+    color: COLOR.PRIMARY,
+  },
+  Run: { en: 'Running', fr: 'En marche', de: 'Läuft', es: 'En marcha', color: COLOR.PRIMARY },
+  Pause: { en: 'Paused', fr: 'En pause', de: 'Pausiert', es: 'En pausa', color: COLOR.WARNING },
+  ActionRequired: {
+    en: 'Action required',
+    fr: 'Action requise',
+    de: 'Aktion erforderlich',
+    es: 'Acción necesaria',
+    color: COLOR.WARNING,
+  },
+  Finished: { en: 'Finished', fr: 'Terminé', de: 'Beendet', es: 'Terminado', color: COLOR.SUCCESS },
+  Error: { en: 'Error', fr: 'Erreur', de: 'Fehler', es: 'Error', color: COLOR.DANGER },
+  Aborting: {
+    en: 'Stopping',
+    fr: 'Arrêt en cours',
+    de: 'Wird gestoppt',
+    es: 'Deteniendo',
+    color: COLOR.WARNING,
+  },
 };
 
 const DOOR_STATES = {
-  Open: { en: 'Open', fr: 'Ouverte' },
-  Closed: { en: 'Closed', fr: 'Fermée' },
-  Locked: { en: 'Locked', fr: 'Verrouillée' },
+  Open: { en: 'Open', fr: 'Ouverte', de: 'Offen', es: 'Abierta' },
+  Closed: { en: 'Closed', fr: 'Fermée', de: 'Geschlossen', es: 'Cerrada' },
+  Locked: { en: 'Locked', fr: 'Verrouillée', de: 'Verriegelt', es: 'Bloqueada' },
 };
 
-const OFFLINE = { en: 'Offline', fr: 'Hors ligne' };
-const UNKNOWN = { en: 'Unknown', fr: 'Inconnu' };
+const OFFLINE = { en: 'Offline', fr: 'Hors ligne', de: 'Offline', es: 'Sin conexión' };
+const SPACED_HOURS = new Set(['fr', 'de', 'es']);
+
+const UNKNOWN = { en: 'Unknown', fr: 'Inconnu', de: 'Unbekannt', es: 'Desconocido' };
 
 /**
  * Pick the right string out of a multi-language object.
@@ -82,7 +102,9 @@ export function formatDuration(seconds, language) {
   if (hours === 0) {
     return `${minutes} min`;
   }
-  return language === 'fr' ? `${hours} h ${rest}` : `${hours}h${rest}`;
+  // French, German and Spanish put a space around the hour unit; English
+  // (and any language we do not know) writes it tight.
+  return SPACED_HOURS.has(language) ? `${hours} h ${rest}` : `${hours}h${rest}`;
 }
 
 /**
@@ -157,7 +179,14 @@ function buildHeadline(description, language) {
       parts.push(description.remainingLabel);
     }
   } else if (description.connected && description.door === 'Open') {
-    parts.push(pick(language, { en: 'door open', fr: 'porte ouverte' }));
+    parts.push(
+      pick(language, {
+        en: 'door open',
+        fr: 'porte ouverte',
+        de: 'Tür offen',
+        es: 'puerta abierta',
+      }),
+    );
   }
   return truncate(parts.filter(Boolean).join(' · '), 40);
 }
