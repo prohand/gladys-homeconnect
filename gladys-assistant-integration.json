@@ -5,7 +5,7 @@
   "description": {
     "en": "Monitor and control your Bosch, Siemens, Neff and Gaggenau appliances via Home Connect.",
     "fr": "Pilotez et suivez vos appareils Bosch, Siemens, Neff et Gaggenau via Home Connect.",
-    "de": "Steuern und überwachen Sie Ihre Bosch-, Siemens-, Neff- und Gaggenau-Geräte über Home Connect.",
+    "de": "Steuere und überwache deine Bosch-, Siemens-, Neff- und Gaggenau-Geräte über Home Connect.",
     "es": "Controle y supervise sus electrodomésticos Bosch, Siemens, Neff y Gaggenau mediante Home Connect."
   },
   "version": "2.3.3",
@@ -21,13 +21,13 @@
       "label": {
         "en": "Before you start",
         "fr": "Avant de commencer",
-        "de": "Bevor Sie beginnen",
+        "de": "Bevor du beginnst",
         "es": "Antes de empezar"
       },
       "description": {
         "en": "Home Connect has no local API: everything goes through the BSH cloud. Create a free developer account, register an application of type \"Home Connect Application\" with the Authorization Code Grant Flow, and paste its Client ID and Client Secret below. The redirect URI to register is shown by the \"Test the connection\" action once you start the connection.",
         "fr": "Home Connect n'a pas d'API locale : tout passe par le cloud BSH. Créez un compte développeur gratuit, enregistrez une application de type « Home Connect Application » avec le flux Authorization Code Grant, puis collez ses Client ID et Client Secret ci-dessous. L'URL de redirection à déclarer est affichée par l'action « Tester la connexion » une fois la connexion lancée.",
-        "de": "Home Connect hat keine lokale API: Alles läuft über die BSH-Cloud. Legen Sie ein kostenloses Entwicklerkonto an, registrieren Sie eine Anwendung vom Typ „Home Connect Application“ mit dem Authorization Code Grant Flow und fügen Sie unten deren Client ID und Client Secret ein. Die einzutragende Weiterleitungs-URI zeigt die Aktion „Verbindung testen“ an, sobald Sie die Verbindung gestartet haben.",
+        "de": "Home Connect hat keine lokale API: Alles läuft über die BSH-Cloud. Lege ein kostenloses Entwicklerkonto an, registriere eine Anwendung vom Typ „Home Connect Application“ mit dem Authorization Code Grant Flow und füge unten deren Client ID und Client Secret ein. Die einzutragende Weiterleitungs-URI zeigt die Aktion „Verbindung testen“ an, sobald du die Verbindung gestartet hast.",
         "es": "Home Connect no tiene API local: todo pasa por la nube de BSH. Cree una cuenta de desarrollador gratuita, registre una aplicación de tipo «Home Connect Application» con el flujo Authorization Code Grant y pegue a continuación su Client ID y su Client Secret. La URI de redirección que debe declarar la muestra la acción «Probar la conexión» una vez iniciada la conexión."
       },
       "links": [
@@ -63,7 +63,7 @@
       "description": {
         "en": "Client ID of your Home Connect application.",
         "fr": "Client ID de votre application Home Connect.",
-        "de": "Client ID Ihrer Home Connect-Anwendung.",
+        "de": "Client ID deiner Home Connect-Anwendung.",
         "es": "Client ID de su aplicación Home Connect."
       },
       "required": true,
@@ -86,7 +86,7 @@
       "description": {
         "en": "Client Secret of your Home Connect application. Leave empty only if you registered a public client without a secret.",
         "fr": "Client Secret de votre application Home Connect. Laissez vide uniquement si vous avez enregistré un client public sans secret.",
-        "de": "Client Secret Ihrer Home Connect-Anwendung. Lassen Sie das Feld nur leer, wenn Sie einen öffentlichen Client ohne Secret registriert haben.",
+        "de": "Client Secret deiner Home Connect-Anwendung. Lass das Feld nur leer, wenn du einen öffentlichen Client ohne Secret registriert hast.",
         "es": "Client Secret de su aplicación Home Connect. Déjelo vacío solo si registró un cliente público sin secreto."
       },
       "required": false
@@ -103,7 +103,7 @@
       "description": {
         "en": "Sign in with the Home Connect account your appliances are paired with, then allow Gladys.",
         "fr": "Connectez-vous avec le compte Home Connect auquel vos appareils sont associés, puis autorisez Gladys.",
-        "de": "Melden Sie sich mit dem Home Connect-Konto an, mit dem Ihre Geräte gekoppelt sind, und erlauben Sie dann Gladys den Zugriff.",
+        "de": "Melde dich mit dem Home Connect-Konto an, mit dem deine Geräte gekoppelt sind, und erlaube dann Gladys den Zugriff.",
         "es": "Inicie sesión con la cuenta de Home Connect a la que están vinculados sus electrodomésticos y autorice a Gladys."
       },
       "required": true
@@ -176,7 +176,7 @@
       "description": {
         "en": "Safety net behind the real-time event stream. Home Connect enforces a daily request quota, so keep it high unless you have a reason not to.",
         "fr": "Filet de sécurité derrière le flux d'événements temps réel. Home Connect impose un quota de requêtes quotidien : gardez une valeur élevée sauf raison particulière.",
-        "de": "Sicherheitsnetz hinter dem Echtzeit-Ereignisstrom. Home Connect erzwingt ein tägliches Anfragekontingent: Behalten Sie einen hohen Wert, sofern Sie keinen Grund dagegen haben.",
+        "de": "Sicherheitsnetz hinter dem Echtzeit-Ereignisstrom. Home Connect erzwingt ein tägliches Anfragekontingent: Behalte einen hohen Wert, sofern du keinen Grund dagegen hast.",
         "es": "Red de seguridad tras el flujo de eventos en tiempo real. Home Connect impone una cuota diaria de peticiones: mantenga un valor alto salvo que tenga un motivo concreto."
       },
       "required": false,
@@ -196,7 +196,7 @@
       "description": {
         "en": "Space-separated Home Connect scopes requested during authorization. Narrow it down if your developer application was registered with fewer permissions.",
         "fr": "Scopes Home Connect demandés lors de l'autorisation, séparés par des espaces. Réduisez-les si votre application développeur a été enregistrée avec moins de permissions.",
-        "de": "Bei der Autorisierung angeforderte Home Connect-Scopes, durch Leerzeichen getrennt. Schränken Sie sie ein, wenn Ihre Entwickleranwendung mit weniger Berechtigungen registriert wurde.",
+        "de": "Bei der Autorisierung angeforderte Home Connect-Scopes, durch Leerzeichen getrennt. Schränke sie ein, wenn deine Entwickleranwendung mit weniger Berechtigungen registriert wurde.",
         "es": "Scopes de Home Connect solicitados durante la autorización, separados por espacios. Redúzcalos si su aplicación de desarrollador se registró con menos permisos."
       },
       "required": false,
@@ -1087,7 +1087,7 @@
       "description": {
         "en": "All your appliances and what they are doing, in one card.",
         "fr": "Tous vos appareils et ce qu’ils font, en une carte.",
-        "de": "Alle Ihre Geräte und was sie gerade tun, auf einer Karte.",
+        "de": "Alle deine Geräte und was sie gerade tun, auf einer Karte.",
         "es": "Todos sus electrodomésticos y lo que están haciendo, en una tarjeta."
       },
       "icon": "grid",

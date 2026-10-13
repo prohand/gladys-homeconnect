@@ -79,27 +79,27 @@ const MAX_OVERVIEW_ROWS = 10;
 
 const TEXTS = {
   noAppliance: {
-    en: 'No Home Connect appliance yet. Add one from the Discovery tab.',
+    en: 'No Home Connect appliance yet. Add one from the Discover tab.',
     fr: 'Aucun appareil Home Connect. Ajoutez-en un depuis l’onglet Découverte.',
-    de: 'Noch kein Home Connect-Gerät. Fügen Sie eines über die Registerkarte „Entdecken“ hinzu.',
+    de: 'Noch kein Home Connect-Gerät. Füge eines über die Registerkarte „Entdecken“ hinzu.',
     es: 'Aún no hay ningún electrodoméstico Home Connect. Añada uno desde la pestaña «Descubrir».',
   },
   noCredentials: {
-    en: 'Home Connect is not configured yet: enter your Client ID and Client Secret in the integration settings.',
+    en: 'Home Connect is not configured yet: enter your Client ID and Client Secret in the Configuration tab of the integration.',
     fr: 'Home Connect n’est pas configuré : renseignez vos Client ID et Client Secret dans la configuration de l’intégration.',
-    de: 'Home Connect ist noch nicht konfiguriert: Geben Sie Ihre Client ID und Ihr Client Secret in der Konfiguration der Integration ein.',
+    de: 'Home Connect ist noch nicht konfiguriert: Gib deine Client ID und dein Client Secret in der Konfiguration der Integration ein.',
     es: 'Home Connect aún no está configurado: introduzca su Client ID y su Client Secret en la configuración de la integración.',
   },
   notConnected: {
-    en: 'Home Connect account not connected: click Connect in the integration settings.',
+    en: 'Home Connect account not connected: click Connect in the Configuration tab of the integration.',
     fr: 'Compte Home Connect non connecté : cliquez sur Connecter dans la configuration de l’intégration.',
-    de: 'Home Connect-Konto nicht verbunden: Klicken Sie in der Konfiguration der Integration auf „Verbinden“.',
+    de: 'Home Connect-Konto nicht verbunden: Klicke in der Konfiguration der Integration auf „Verbinden“.',
     es: 'Cuenta de Home Connect no conectada: pulse «Conectar» en la configuración de la integración.',
   },
   loading: {
     en: 'Reading your Home Connect appliances…',
     fr: 'Lecture de vos appareils Home Connect…',
-    de: 'Ihre Home Connect-Geräte werden gelesen…',
+    de: 'Deine Home Connect-Geräte werden gelesen…',
     es: 'Leyendo sus electrodomésticos Home Connect…',
   },
   running: { en: 'Running', fr: 'En cours', de: 'Läuft', es: 'En curso' },
