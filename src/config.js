@@ -40,7 +40,10 @@ export const DEFAULT_CONFIG = {
 export const MIN_POLL_FREQUENCY = 900;
 export const MAX_POLL_FREQUENCY = 3600;
 
-const SUPPORTED_LANGUAGES = new Set(['en', 'fr']);
+// The languages of the `language` select: they name the device features (the
+// catalog carries one name per language) and are sent to Home Connect as
+// `Accept-Language`, so the program names it returns follow the same choice.
+export const SUPPORTED_LANGUAGES = ['fr', 'en', 'de', 'es'];
 
 // Gladys stores `poll_frequency` as an ENUM of milliseconds
 // (`DEVICE_POLL_FREQUENCIES`: 1 s, 2 s, 10 s, 15 s, 30 s, 60 s) and rejects
@@ -56,7 +59,9 @@ export const GLADYS_POLL_TICK_MS = DEVICE_POLL_FREQUENCIES.EVERY_MINUTES;
  */
 export function normalizeConfig(raw = {}) {
   const useSimulator = raw.use_simulator === true || raw.use_simulator === 'true';
-  const language = SUPPORTED_LANGUAGES.has(raw.language) ? raw.language : DEFAULT_CONFIG.language;
+  const language = SUPPORTED_LANGUAGES.includes(raw.language)
+    ? raw.language
+    : DEFAULT_CONFIG.language;
 
   return {
     ...DEFAULT_CONFIG,

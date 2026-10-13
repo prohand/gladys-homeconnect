@@ -70,6 +70,26 @@ test('the overview lists every appliance with what it is doing', async () => {
   assert.equal(running.value, 1);
 });
 
+test('the overview speaks German and Spanish to the readers who use them', async () => {
+  const { gladys } = await createWidgets();
+
+  for (const [language, headline] of [
+    ['de', 'Läuft · Auto2 · 30 min'],
+    ['es', 'En marcha · Auto2 · 30 min'],
+  ]) {
+    const content = await invoke(gladys, `widget:${WIDGETS.OVERVIEW}`, {
+      settings: {},
+      language,
+      units: 'metric',
+    });
+    assertRenderable(content);
+    const status = content.components.find((component) => component.type === 'status');
+    assert.equal(status.items[0].value, headline);
+    const running = content.components.find((component) => component.type === 'value');
+    assert.ok(running.label[language], `the running tile is labelled in ${language}`);
+  }
+});
+
 test('the overview honours the appliances chosen in the widget settings', async () => {
   const { gladys } = await createWidgets();
 

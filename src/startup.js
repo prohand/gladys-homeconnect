@@ -26,6 +26,8 @@ export const ACCOUNT_RETRY_DELAYS_MS = [60_000, 5 * 60_000, 15 * 60_000];
 const AUTHORIZATION_EXPIRED = {
   en: 'Home Connect authorization expired, click Connect again.',
   fr: 'Autorisation Home Connect expirée, cliquez de nouveau sur Connecter.',
+  de: 'Home Connect-Autorisierung abgelaufen, klicken Sie erneut auf „Verbinden“.',
+  es: 'Autorización de Home Connect caducada, pulse de nuevo «Conectar».',
 };
 
 /**
@@ -35,7 +37,7 @@ const AUTHORIZATION_EXPIRED = {
  * @param {() => object} options.getConfig
  * @param {() => void} options.startStream
  * @param {() => void} options.stopStream
- * @param {(connected: boolean, message?: {en: string, fr: string}) => Promise<void>} options.reportStatus
+ * @param {(connected: boolean, message?: {en: string, fr: string, de: string, es: string}) => Promise<void>} options.reportStatus
  * @param {typeof setTimeout} [options.setTimer]
  * @param {typeof clearTimeout} [options.clearTimer]
  * @returns {{ initialize: () => Promise<void>, cancelRetry: () => void }}
@@ -75,6 +77,8 @@ export function createStartup({
       await reportStatus(false, {
         en: 'Home Connect rate limit reached, retrying shortly.',
         fr: 'Quota Home Connect atteint, nouvelle tentative sous peu.',
+        de: 'Home Connect-Kontingent erreicht, neuer Versuch in Kürze.',
+        es: 'Cuota de Home Connect alcanzada, nuevo intento en breve.',
       });
       return true;
     }
@@ -82,6 +86,8 @@ export function createStartup({
     await reportStatus(false, {
       en: 'Home Connect could not be read, retrying automatically. Check the integration logs if it lasts.',
       fr: "Lecture de Home Connect impossible, nouvelle tentative automatique. Consultez les logs de l'intégration si cela dure.",
+      de: 'Home Connect konnte nicht gelesen werden, automatischer neuer Versuch. Prüfen Sie die Protokolle der Integration, falls es andauert.',
+      es: 'No se ha podido leer Home Connect, nuevo intento automático. Consulte los registros de la integración si persiste.',
     });
     return true;
   }
@@ -134,6 +140,8 @@ export function createStartup({
       await reportStatus(false, {
         en: 'Enter your Home Connect Client ID and Client Secret.',
         fr: 'Renseignez vos Client ID et Client Secret Home Connect.',
+        de: 'Geben Sie Ihre Home Connect-Client ID und Ihr Client Secret ein.',
+        es: 'Introduzca su Client ID y su Client Secret de Home Connect.',
       });
       return;
     }
@@ -142,6 +150,8 @@ export function createStartup({
       await reportStatus(false, {
         en: 'Click Connect to link your Home Connect account.',
         fr: 'Cliquez sur Connecter pour lier votre compte Home Connect.',
+        de: 'Klicken Sie auf „Verbinden“, um Ihr Home Connect-Konto zu verknüpfen.',
+        es: 'Pulse «Conectar» para vincular su cuenta de Home Connect.',
       });
       return;
     }
