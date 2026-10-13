@@ -6,6 +6,8 @@ All notable changes to this integration are documented here. The format follows
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-10-13
+
 ### Added
 
 - German and Spanish translations (configuration screen, messages, widgets, documentation).
@@ -119,7 +121,8 @@ First public release.
 - Fill in device values on the first connection
 - Fix door polarity, nameless features, empty alerts; default to French
 
-[Unreleased]: https://github.com/prohand/gladys-homeconnect/compare/v2.3.3...HEAD
+[Unreleased]: https://github.com/prohand/gladys-homeconnect/compare/v2.4.0...HEAD
+[2.4.0]: https://github.com/prohand/gladys-homeconnect/compare/v2.3.3...v2.4.0
 [2.3.3]: https://github.com/prohand/gladys-homeconnect/compare/v2.3.2...v2.3.3
 [2.3.2]: https://github.com/prohand/gladys-homeconnect/compare/v2.3.1...v2.3.2
 [2.3.1]: https://github.com/prohand/gladys-homeconnect/compare/v2.3.0...v2.3.1
