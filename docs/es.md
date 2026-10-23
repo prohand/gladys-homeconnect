@@ -44,8 +44,9 @@ por producto.
    Connect.
 
 Si Home Connect responde _«redirect_uri mismatch»_, la URI que usa Gladys no es
-la registrada en el portal. Pulse una vez el botón **Probar la conexión**:
-muestra la URI de redirección exacta que ha usado Gladys. Péguela en el campo
+la registrada en el portal. Tras un primer clic en **Conectar**, el botón
+**Probar la conexión** muestra la URI de redirección exacta que ha usado Gladys;
+también aparece en los logs de la integración. Péguela en el campo
 **Redirect URI** de su aplicación de desarrollador, guarde en el portal y pulse
 **Conectar** de nuevo.
 
@@ -215,6 +216,21 @@ credenciales o están vacías.
 
 **«Pulse «Conectar» para vincular su cuenta de Home Connect»**: las credenciales
 están, pero el flujo OAuth nunca se completó.
+
+**La página de Home Connect muestra un error o nunca vuelve a Gladys**: la
+última línea de los logs es «Building the Home Connect authorization URL» y no
+sigue nada. Home Connect detuvo el inicio de sesión en su propia página, antes de
+volver a Gladys. Compruebe, en este orden:
+
+- la URI de redirección registrada en el portal de desarrolladores es
+  **exactamente** la de esa línea de log (mismo `http`/`https`, misma dirección,
+  mismo puerto, sin espacio ni `/` de más);
+- inicia sesión en Home Connect con la cuenta indicada en **Home Connect User
+  Account for Testing**: una aplicación no publicada rechaza cualquier otra
+  cuenta;
+- el **Client ID** pegado en Gladys es el de esta aplicación;
+- una aplicación recién creada o modificada en el portal puede tardar unos
+  minutos en activarse: espere y pulse **Conectar** de nuevo.
 
 **«La integración rechazó la conexión. Vuelva a intentarlo.»** en la ventana de
 retorno de la autorización: ha fallado el intercambio del código de

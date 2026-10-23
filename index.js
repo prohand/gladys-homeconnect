@@ -168,7 +168,10 @@ gladys.onPoll(async (device) => {
 // Home Connect account takes far longer than that, and doing it here used to
 // fail the connection the token exchange had just succeeded in making.
 gladys.onOAuthAuthorizeUrl(async (key, redirectUri) => {
-  logger.info(`Building the Home Connect authorization URL (${key})`);
+  // The redirect URI is logged because a mismatch with the one registered in
+  // the developer portal is stopped on the Home Connect page itself: the
+  // callback never comes back, and this line is all the logs then show.
+  logger.info(`Building the Home Connect authorization URL (${key}), redirect URI: ${redirectUri}`);
   if (!hasCredentials(config)) {
     throw new Error('Fill in your Home Connect Client ID before connecting your account');
   }
@@ -224,9 +227,14 @@ async function assertExpectedState(returnedState) {
 
 // --- Manifest actions: buttons in the Configuration screen -------------------
 gladys.onAction('test_connection', async () => {
+  const redirectUri = rawConfig.oauth_redirect_uri;
+  // Before the first successful Connect there is no token to test with, and the
+  // redirect URI is precisely what the user needs to finish the sign-in.
+  if (!api.isAuthorized()) {
+    return notConnectedMessage(redirectUri);
+  }
   const appliances = await api.getAppliances();
   const names = appliances.map((appliance) => appliance.name || appliance.type).join(', ');
-  const redirectUri = rawConfig.oauth_redirect_uri;
   const suffix = redirectUri ? ` (redirect URI: ${redirectUri})` : '';
   if (appliances.length === 0) {
     return {
@@ -243,6 +251,27 @@ gladys.onAction('test_connection', async () => {
     es: `Conectado: ${appliances.length} electrodoméstico(s) — ${names}`,
   };
 });
+
+/**
+ * What "Test the connection" answers while no account is linked yet.
+ * @param {string|undefined} redirectUri the one Gladys gave at the last Connect
+ */
+function notConnectedMessage(redirectUri) {
+  if (!redirectUri) {
+    return {
+      en: 'Home Connect account not connected yet: click Connect once, then test again to see the redirect URI to register in the Home Connect developer portal',
+      fr: "Compte Home Connect pas encore connecté : cliquez une fois sur Connecter, puis testez de nouveau pour voir l'URL de redirection à déclarer dans le portail développeur Home Connect",
+      de: 'Home-Connect-Konto noch nicht verbunden: einmal auf Verbinden klicken, dann erneut testen, um die im Home-Connect-Entwicklerportal einzutragende Redirect-URI zu sehen',
+      es: 'La cuenta Home Connect aún no está conectada: pulse una vez Conectar y vuelva a probar para ver la URI de redirección que debe registrar en el portal de desarrolladores de Home Connect',
+    };
+  }
+  return {
+    en: `Home Connect account not connected yet. Redirect URI to register in the Home Connect developer portal: ${redirectUri}`,
+    fr: `Compte Home Connect pas encore connecté. URL de redirection à déclarer dans le portail développeur Home Connect : ${redirectUri}`,
+    de: `Home-Connect-Konto noch nicht verbunden. Im Home-Connect-Entwicklerportal einzutragende Redirect-URI: ${redirectUri}`,
+    es: `La cuenta Home Connect aún no está conectada. URI de redirección que debe registrar en el portal de desarrolladores de Home Connect: ${redirectUri}`,
+  };
+}
 
 // --- Scenes and dashboard widgets (Gladys 5.1) -------------------------------
 //

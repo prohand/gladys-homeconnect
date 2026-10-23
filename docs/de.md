@@ -45,9 +45,10 @@ Produkt.
    Home Connect.
 
 Antwortet Home Connect mit _„redirect_uri mismatch“_, ist die URI, die Gladys
-verwendet, nicht die im Portal registrierte. Klicke einmal auf die
-Schaltfläche **Verbindung testen**: Sie zeigt die genaue Weiterleitungs-URI an,
-die Gladys verwendet hat. Füge sie in das Feld **Redirect URI** deiner
+verwendet, nicht die im Portal registrierte. Nach einem ersten Klick auf
+**Verbinden** zeigt die Schaltfläche **Verbindung testen** die genaue
+Weiterleitungs-URI an, die Gladys verwendet hat; sie steht auch in den Logs der
+Integration. Füge sie in das Feld **Redirect URI** deiner
 Entwickleranwendung ein, speichere im Portal und klicke erneut auf
 **Verbinden**.
 
@@ -215,6 +216,21 @@ Zugangsdaten fehlen oder sind leer.
 
 **„Klicke auf „Verbinden“, um dein Home Connect-Konto zu verknüpfen“** — die
 Zugangsdaten sind vorhanden, aber der OAuth-Ablauf wurde nie abgeschlossen.
+
+**Die Home Connect-Seite zeigt einen Fehler oder leitet nie zu Gladys zurück**
+— die letzte Zeile der Logs ist „Building the Home Connect authorization URL“,
+danach kommt nichts: Home Connect hat die Anmeldung auf der eigenen Seite
+gestoppt, bevor etwas zu Gladys zurückkam. Prüfe in dieser Reihenfolge:
+
+- die im Entwicklerportal registrierte Redirect URI ist **genau** die in dieser
+  Logzeile (gleiches `http`/`https`, gleiche Adresse, gleicher Port, kein
+  zusätzliches Leerzeichen oder `/`);
+- du meldest dich bei Home Connect mit dem Konto an, das unter **Home Connect
+  User Account for Testing** eingetragen ist: eine nicht veröffentlichte
+  Anwendung lehnt jedes andere Konto ab;
+- die in Gladys eingefügte **Client ID** gehört zu dieser Anwendung;
+- eine gerade im Portal erstellte oder geänderte Anwendung kann einige Minuten
+  brauchen, bis sie aktiv ist: warte und klicke dann erneut auf **Verbinden**.
 
 **„Die Integration hat die Verbindung abgelehnt. Bitte erneut versuchen.“** im
 Rückruffenster der Autorisierung — der Austausch des Autorisierungscodes ist
