@@ -200,6 +200,14 @@ missing or empty.
 **"Click Connect to link your Home Connect account"** — the credentials are
 there, but the OAuth flow was never completed.
 
+**You have to click Connect several times before the Home Connect page
+opens** — Gladys opens the Home Connect page in a new tab, but only once the
+integration has answered with the sign-in address. The browser may then treat
+that tab as a pop-up and block it without telling you. Allow pop-ups for the
+address of your Gladys (icon in the address bar, or browser settings), then
+click **Connect** once. Each click starts a new authorization: only the last
+page opened is valid.
+
 **The Home Connect page shows an error, or never sends you back to Gladys** —
 the last line of the logs is "Building the Home Connect authorization URL" and
 nothing follows: Home Connect stopped the sign-in on its own page, before

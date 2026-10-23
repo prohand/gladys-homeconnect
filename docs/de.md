@@ -217,6 +217,15 @@ Zugangsdaten fehlen oder sind leer.
 **„Klicke auf „Verbinden“, um dein Home Connect-Konto zu verknüpfen“** — die
 Zugangsdaten sind vorhanden, aber der OAuth-Ablauf wurde nie abgeschlossen.
 
+**Du musst mehrmals auf „Verbinden“ klicken, bevor sich die Home Connect-Seite
+öffnet** — Gladys öffnet die Home Connect-Seite in einem neuen Tab, aber erst,
+wenn die Integration die Anmeldeadresse geliefert hat. Der Browser kann diesen
+Tab dann für ein Pop-up halten und ihn ohne Hinweis blockieren. Erlaube Pop-ups
+für die Adresse deines Gladys (Symbol in der Adressleiste oder
+Browsereinstellungen) und klicke dann ein einziges Mal auf **Verbinden**. Jeder
+Klick startet eine neue Autorisierung: Nur die zuletzt geöffnete Seite ist
+gültig.
+
 **Die Home Connect-Seite zeigt einen Fehler oder leitet nie zu Gladys zurück**
 — die letzte Zeile der Logs ist „Building the Home Connect authorization URL“,
 danach kommt nichts: Home Connect hat die Anmeldung auf der eigenen Seite

@@ -217,6 +217,15 @@ credenciales o están vacías.
 **«Pulse «Conectar» para vincular su cuenta de Home Connect»**: las credenciales
 están, pero el flujo OAuth nunca se completó.
 
+**Hay que pulsar varias veces «Conectar» antes de que se abra la página de Home
+Connect**: Gladys abre la página de Home Connect en una pestaña nueva, pero solo
+cuando la integración le ha devuelto la dirección de inicio de sesión. El
+navegador puede entonces tomar esa pestaña por una ventana emergente (pop-up) y
+bloquearla sin avisar. Permita las ventanas emergentes para la dirección de su
+Gladys (icono en la barra de direcciones o ajustes del navegador) y pulse una
+sola vez **Conectar**. Cada pulsación inicia una nueva autorización: solo la
+última página abierta es válida.
+
 **La página de Home Connect muestra un error o nunca vuelve a Gladys**: la
 última línea de los logs es «Building the Home Connect authorization URL» y no
 sigue nada. Home Connect detuvo el inicio de sesión en su propia página, antes de

@@ -214,6 +214,15 @@ sont absents ou vides.
 **« Cliquez sur Connecter pour lier votre compte Home Connect »** — les
 identifiants sont là, mais le flux OAuth n'a jamais été mené à son terme.
 
+**Il faut cliquer plusieurs fois sur Connecter avant que la page Home Connect
+s'ouvre** — Gladys ouvre la page Home Connect dans un nouvel onglet, mais
+seulement après avoir reçu l'adresse de connexion de l'intégration. Le
+navigateur peut alors prendre cet onglet pour une fenêtre surgissante (pop-up)
+et le bloquer sans rien afficher. Autorisez les pop-ups pour l'adresse de votre
+Gladys (icône dans la barre d'adresse, ou réglages du navigateur), puis cliquez
+une seule fois sur **Connecter**. Chaque clic crée une nouvelle autorisation :
+seule la dernière page ouverte est valable.
+
 **La page Home Connect affiche une erreur, ou ne renvoie jamais vers Gladys** —
 dans les logs, la dernière ligne est « Building the Home Connect authorization
 URL » et rien ne suit : Home Connect a bloqué la connexion sur sa propre page,
