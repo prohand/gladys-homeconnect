@@ -39,8 +39,9 @@ application credentials — BSH grants them per developer, not per product.
    Gladys opens the Home Connect sign-in page.
 
 If Home Connect answers _"redirect_uri mismatch"_, the URI Gladys uses is not
-the one registered in the portal. Click the **Test the connection** button once:
-it prints the exact redirect URI Gladys used. Paste it into the **Redirect URI**
+the one registered in the portal. Once you have clicked **Connect** a first time,
+the **Test the connection** button prints the exact redirect URI Gladys used; it
+is also written in the integration's logs. Paste it into the **Redirect URI**
 field of your developer application, save on the portal, and click **Connect**
 again.
 
@@ -198,6 +199,20 @@ missing or empty.
 
 **"Click Connect to link your Home Connect account"** — the credentials are
 there, but the OAuth flow was never completed.
+
+**The Home Connect page shows an error, or never sends you back to Gladys** —
+the last line of the logs is "Building the Home Connect authorization URL" and
+nothing follows: Home Connect stopped the sign-in on its own page, before
+anything came back to Gladys. Check, in this order:
+
+- the redirect URI registered in the developer portal is **exactly** the one
+  written in that log line (same `http`/`https`, same address, same port, no
+  extra space or `/`);
+- you sign in at Home Connect with the account entered as **Home Connect User
+  Account for Testing**: an unpublished application refuses any other account;
+- the **Client ID** pasted in Gladys is the one of this application;
+- an application just created or changed on the portal can take a few minutes
+  to become active: wait, then click **Connect** again.
 
 **"The integration refused the connection. Try again."** in the authorization
 callback window — the authorization code exchange failed. Open the integration's

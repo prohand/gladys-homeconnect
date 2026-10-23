@@ -6,6 +6,13 @@ All notable changes to this integration are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- **Test the connection** gives the redirect URI to register before the account is linked,
+  instead of failing: the documentation sent users there precisely at that moment.
+- The redirect URI is written in the logs when Connect is clicked, and the documentation explains
+  what to check when the Home Connect page never sends you back to Gladys.
+
 ## [2.4.1] - 2026-10-23
 
 - Maintenance release, no functional change.

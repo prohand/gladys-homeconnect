@@ -42,9 +42,10 @@ propres** identifiants : BSH les délivre par développeur, pas par produit.
    _Compte Home Connect_. Gladys ouvre la page de connexion Home Connect.
 
 Si Home Connect répond « redirect_uri mismatch », c'est que l'URL utilisée par
-Gladys n'est pas celle déclarée dans le portail. Cliquez une fois sur le bouton
-**Tester la connexion** : il affiche l'URL de redirection exacte utilisée par
-Gladys. Collez-la dans le champ **Redirect URI** de votre application
+Gladys n'est pas celle déclarée dans le portail. Après un premier clic sur
+**Connecter**, le bouton **Tester la connexion** affiche l'URL de redirection
+exacte utilisée par Gladys ; elle est aussi écrite dans les logs de
+l'intégration. Collez-la dans le champ **Redirect URI** de votre application
 développeur, enregistrez sur le portail, puis cliquez de nouveau sur
 **Connecter**.
 
@@ -212,6 +213,22 @@ sont absents ou vides.
 
 **« Cliquez sur Connecter pour lier votre compte Home Connect »** — les
 identifiants sont là, mais le flux OAuth n'a jamais été mené à son terme.
+
+**La page Home Connect affiche une erreur, ou ne renvoie jamais vers Gladys** —
+dans les logs, la dernière ligne est « Building the Home Connect authorization
+URL » et rien ne suit : Home Connect a bloqué la connexion sur sa propre page,
+avant tout retour vers Gladys. Vérifiez, dans cet ordre :
+
+- l'URL de redirection déclarée dans le portail développeur est **exactement**
+  celle écrite dans cette ligne de log (même protocole `http`/`https`, même
+  adresse, même port, pas d'espace ni de `/` en trop) ;
+- vous vous connectez chez Home Connect avec le compte saisi en **Home Connect
+  User Account for Testing** : une application non publiée refuse tout autre
+  compte ;
+- le **Client ID** collé dans Gladys est celui de cette application ;
+- une application tout juste créée ou modifiée sur le portail peut mettre
+  quelques minutes à être active : patientez, puis cliquez de nouveau sur
+  **Connecter**.
 
 **« L'intégration a refusé la connexion. Réessayez. »** dans la fenêtre de
 retour d'autorisation — l'échange du code d'autorisation a échoué. Ouvrez les
