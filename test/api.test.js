@@ -185,3 +185,61 @@ test('a start refused for another reason is not retried', async (t) => {
   await assert.rejects(api.startSelectedProgram('HA1'), /Remote start is not enabled/);
   assert.equal(starts.length, 1);
 });
+
+const SILENCE = 'Dishcare.Dishwasher.Option.SilenceOnDemand';
+const EXTRA_DRY = 'Dishcare.Dishwasher.Option.ExtraDry';
+
+test('options the appliance only reports are never sent back at start', async (t) => {
+  // The dishwasher of the forum report: five refusals in a row used to burn
+  // the five starts Home Connect allows per minute, and the sixth got a 429.
+  const { api, starts } = stubStart(t, {
+    options: [
+      { key: SMART_START, value: false },
+      { key: 'BSH.Common.Option.EnergyForecast', value: 60 },
+      { key: 'BSH.Common.Option.WaterForecast', value: 50 },
+      { key: 'BSH.Common.Option.RemainingProgramTimeIsEstimated', value: true },
+      { key: SILENCE, value: 0 },
+      { key: EXTRA_DRY, value: true },
+    ],
+    refused: [
+      SMART_START,
+      'BSH.Common.Option.EnergyForecast',
+      'BSH.Common.Option.WaterForecast',
+      'BSH.Common.Option.RemainingProgramTimeIsEstimated',
+      SILENCE,
+    ],
+  });
+
+  await api.startSelectedProgram('HA1');
+  assert.deepEqual(starts, [[SMART_START, SILENCE, EXTRA_DRY], [SILENCE, EXTRA_DRY], [EXTRA_DRY]]);
+});
+
+test('an option refused once is left out of the next starts', async (t) => {
+  const { api, starts } = stubStart(t, {
+    options: [
+      { key: SMART_START, value: false },
+      { key: EXTRA_DRY, value: true },
+    ],
+    refused: [SMART_START],
+  });
+
+  await api.startSelectedProgram('HA1');
+  starts.length = 0;
+  await api.startSelectedProgram('HA1');
+  assert.deepEqual(starts, [[EXTRA_DRY]], 'one request, without the refused option');
+});
+
+test('a start stops under the Home Connect start limit, the next one goes on', async (t) => {
+  const refused = ['A', 'B', 'C', 'D', 'E'].map((letter) => `Dishcare.Dishwasher.Option.${letter}`);
+  const { api, starts } = stubStart(t, {
+    options: refused.map((key) => ({ key, value: true })),
+    refused,
+  });
+
+  await assert.rejects(api.startSelectedProgram('HA1'), /try again in a minute/);
+  assert.equal(starts.length, 4);
+
+  starts.length = 0;
+  await api.startSelectedProgram('HA1');
+  assert.deepEqual(starts, [[refused[4]], []]);
+});

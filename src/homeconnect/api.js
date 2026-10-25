@@ -14,7 +14,7 @@
 // -----------------------------------------------------------------------------
 
 import { createLogger } from '@gladysassistant/integration-sdk';
-import { API_PATH, BSH_JSON_V1 } from './constants.js';
+import { API_PATH, BSH_JSON_V1, REPORT_ONLY_OPTIONS } from './constants.js';
 import { ReauthorizationRequiredError, refreshTokens } from './oauth.js';
 
 const logger = createLogger({ name: 'homeconnect-api' });
@@ -27,6 +27,11 @@ const TOKEN_EXPIRY_MARGIN_MS = 120_000;
 // from the next request on: every request would otherwise retry, and log, a
 // write the host keeps refusing.
 const PERSIST_RETRY_MS = 60_000;
+
+// Home Connect accepts 5 program starts per minute and answers the next ones
+// with a 429 for a minute. Every option refused costs one start, so one call
+// stops before the limit and leaves the user a start to try again with.
+const START_ATTEMPTS = 4;
 
 /** Thrown when Home Connect answers 429; carries the cooldown it asked for. */
 export class RateLimitedError extends Error {
@@ -73,6 +78,9 @@ export class HomeConnectApi {
     // A refreshed pair Gladys could not store yet, and when to try again.
     this.unpersistedTokens = null;
     this.persistRetryAt = 0;
+    // haId -> keys of the options a start was refused over. Kept for the life
+    // of the process so the next start skips them without spending a request.
+    this.refusedOptions = new Map();
   }
 
   /** @returns {boolean} whether a token pair is stored at all. */
@@ -174,8 +182,12 @@ export class HomeConnectApi {
     if (!selected?.key) {
       throw new Error('No program selected on the appliance');
     }
-    let options = selected.options ?? [];
-    for (;;) {
+    const refused = this.refusedOptions.get(haId) ?? new Set();
+    this.refusedOptions.set(haId, refused);
+    let options = (selected.options ?? []).filter(
+      (option) => !REPORT_ONLY_OPTIONS.has(option.key) && !refused.has(option.key),
+    );
+    for (let attempt = 1; ; attempt += 1) {
       try {
         await this.request('PUT', `${API_PATH}/${encodeURIComponent(haId)}/programs/active`, {
           data: { key: selected.key, options },
@@ -186,12 +198,19 @@ export class HomeConnectApi {
         // to be started with ("Option …SmartStartEnabled not supported" on a
         // dishwasher). Which ones depends on the model, so drop the one it
         // names and try again: the appliance keeps its own value for it.
-        const refused = refusedOption(err, options);
-        if (!refused) {
+        const key = refusedOption(err, options);
+        if (!key) {
           throw err;
         }
-        logger.info(`Starting ${haId} without the option it refuses: ${refused}`);
-        options = options.filter((option) => option.key !== refused);
+        logger.info(`Starting ${haId} without the option it refuses: ${key}`);
+        refused.add(key);
+        options = options.filter((option) => option.key !== key);
+        if (attempt >= START_ATTEMPTS) {
+          throw new Error(
+            'The appliance refused several options; Home Connect limits program starts, try again in a minute',
+            { cause: err },
+          );
+        }
       }
     }
   }
