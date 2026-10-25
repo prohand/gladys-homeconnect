@@ -174,10 +174,26 @@ export class HomeConnectApi {
     if (!selected?.key) {
       throw new Error('No program selected on the appliance');
     }
-    await this.request('PUT', `${API_PATH}/${encodeURIComponent(haId)}/programs/active`, {
-      data: { key: selected.key, options: selected.options ?? [] },
-    });
-    return selected.key;
+    let options = selected.options ?? [];
+    for (;;) {
+      try {
+        await this.request('PUT', `${API_PATH}/${encodeURIComponent(haId)}/programs/active`, {
+          data: { key: selected.key, options },
+        });
+        return selected.key;
+      } catch (err) {
+        // The selected program lists options the appliance shows but refuses
+        // to be started with ("Option …SmartStartEnabled not supported" on a
+        // dishwasher). Which ones depends on the model, so drop the one it
+        // names and try again: the appliance keeps its own value for it.
+        const refused = refusedOption(err, options);
+        if (!refused) {
+          throw err;
+        }
+        logger.info(`Starting ${haId} without the option it refuses: ${refused}`);
+        options = options.filter((option) => option.key !== refused);
+      }
+    }
   }
 
   /** Abort the running program. */
@@ -377,4 +393,23 @@ async function readJson(response) {
   } catch {
     return null;
   }
+}
+
+/**
+ * The key of the option a start request was refused over, or null when the
+ * refusal is about something else (remote start off, door open…). Home Connect
+ * names the option in its description; the longest match wins so that a key
+ * that prefixes another one is never taken for it.
+ * @param {unknown} err
+ * @param {Array<{key: string}>} options the options that were sent
+ */
+function refusedOption(err, options) {
+  if (!(err instanceof HomeConnectApiError)) {
+    return null;
+  }
+  const named = options
+    .map((option) => option.key)
+    .filter((key) => key && err.message.includes(key))
+    .sort((a, b) => b.length - a.length);
+  return named[0] ?? null;
 }

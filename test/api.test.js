@@ -119,3 +119,69 @@ test('getCommands answers the keys of the commands the appliance lists', async (
 
   assert.deepEqual(await api.getCommands('HA1'), ['BSH.Common.Command.PauseProgram']);
 });
+
+/** An appliance whose start refuses some options, answering like Home Connect. */
+function stubStart(t, { options, refused, otherError }) {
+  const original = globalThis.fetch;
+  const starts = [];
+  globalThis.fetch = async (url, init) => {
+    if (init.method === 'GET') {
+      return jsonResponse(200, { data: { key: 'Dishcare.Dishwasher.Program.Eco50', options } });
+    }
+    const sent = JSON.parse(init.body).data.options;
+    starts.push(sent.map((option) => option.key));
+    if (otherError) {
+      return jsonResponse(409, {
+        error: { key: 'SDK.Error.RemoteStartNotActivated', description: otherError },
+      });
+    }
+    const bad = sent.find((option) => refused.includes(option.key));
+    if (bad) {
+      return jsonResponse(409, {
+        error: {
+          key: 'SDK.Error.UnsupportedOption',
+          description: `Option ${bad.key} not supported`,
+        },
+      });
+    }
+    return new Response(null, { status: 204 });
+  };
+  t.after(() => {
+    globalThis.fetch = original;
+  });
+  const api = new HomeConnectApi({
+    getConfig: () => config,
+    getTokens: () => ({ access_token: 'at', refresh_token: 'rt', token_expires_at: Infinity }),
+    persistTokens: async () => {},
+  });
+  return { api, starts };
+}
+
+const SMART_START = 'BSH.Common.Option.SmartEnergyService.SmartStartEnabled';
+
+test('a start refused over an option is retried without that option only', async (t) => {
+  const { api, starts } = stubStart(t, {
+    options: [
+      { key: SMART_START, value: false },
+      { key: 'Dishcare.Dishwasher.Option.ExtraDry', value: true },
+    ],
+    refused: [SMART_START],
+  });
+
+  assert.equal(await api.startSelectedProgram('HA1'), 'Dishcare.Dishwasher.Program.Eco50');
+  assert.deepEqual(starts, [
+    [SMART_START, 'Dishcare.Dishwasher.Option.ExtraDry'],
+    ['Dishcare.Dishwasher.Option.ExtraDry'],
+  ]);
+});
+
+test('a start refused for another reason is not retried', async (t) => {
+  const { api, starts } = stubStart(t, {
+    options: [{ key: SMART_START, value: false }],
+    refused: [],
+    otherError: 'Remote start is not enabled',
+  });
+
+  await assert.rejects(api.startSelectedProgram('HA1'), /Remote start is not enabled/);
+  assert.equal(starts.length, 1);
+});
