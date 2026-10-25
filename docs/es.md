@@ -13,6 +13,8 @@ congeladores, vinotecas, cafeteras, robots de limpieza y robots de cocina.
 > de BSH, y solo con ella. Si su conexión a internet cae, esta integración cae.
 > Es una propiedad de los electrodomésticos, no de la integración.
 
+Requiere **Gladys 5.3.0** o posterior.
+
 ## 1. Crear una aplicación de desarrollador de Home Connect
 
 La API de Home Connect es gratuita, pero cada instancia de Gladys necesita sus
@@ -74,6 +76,7 @@ realmente, así que no hay dos electrodomésticos con la misma lista. Lo habitua
 | Temperatura del horno                                      | temperatura | hornos                               |
 | Iluminación, iluminación ambiental, brillo                 | luz         | campanas, hornos, frigoríficos       |
 | Bloqueo infantil                                           | bloqueo     | los que lo admiten                   |
+| Nivel de batería, cargando                                 | batería     | robots aspiradores                   |
 | Contadores de bebidas                                      | contador    | cafeteras                            |
 | Alertas (poca sal, depósito de agua vacío, filtro…)        | binario     | según la familia de electrodoméstico |
 | Conectado                                                  | binario     | todos                                |

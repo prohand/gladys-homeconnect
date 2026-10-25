@@ -13,6 +13,8 @@ caves à vin, machines à café, robots aspirateurs et robots culinaires.
 > cloud BSH, et uniquement avec lui. Sans connexion Internet, cette intégration
 > ne fonctionne pas. C'est une propriété des appareils, pas de l'intégration.
 
+Nécessite **Gladys 5.3.0** ou plus récent.
+
 ## 1. Créer une application développeur Home Connect
 
 L'API Home Connect est gratuite, mais chaque instance Gladys a besoin de **ses
@@ -73,6 +75,7 @@ réellement : deux appareils n'obtiennent donc jamais la même liste. En génér
 | Température du four                                    | température | fours                         |
 | Éclairage, éclairage d'ambiance, luminosité            | lumière     | hottes, fours, réfrigérateurs |
 | Sécurité enfant                                        | verrou      | appareils compatibles         |
+| Niveau de batterie, en charge                          | batterie    | robots aspirateurs            |
 | Compteurs de boissons                                  | compteur    | machines à café               |
 | Alertes (sel, réservoir d'eau, filtre…)                | binaire     | selon la famille d'appareil   |
 | Connecté                                               | binaire     | tous                          |

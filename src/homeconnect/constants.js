@@ -68,6 +68,7 @@ export const STATUSES = {
   REMOTE_CONTROL_START_ALLOWED: 'BSH.Common.Status.RemoteControlStartAllowed',
   LOCAL_CONTROL_ACTIVE: 'BSH.Common.Status.LocalControlActive',
   BATTERY_LEVEL: 'BSH.Common.Status.BatteryLevel',
+  BATTERY_CHARGING_STATE: 'BSH.Common.Status.BatteryChargingState',
   OVEN_CAVITY_TEMPERATURE: 'Cooking.Oven.Status.CurrentCavityTemperature',
   DOOR_REFRIGERATOR: 'Refrigeration.Common.Status.Door.Refrigerator',
   DOOR_FREEZER: 'Refrigeration.Common.Status.Door.Freezer',
@@ -144,6 +145,12 @@ export const DOOR_STATE = {
   OPEN: 'BSH.Common.EnumType.DoorState.Open',
   CLOSED: 'BSH.Common.EnumType.DoorState.Closed',
   LOCKED: 'BSH.Common.EnumType.DoorState.Locked',
+};
+
+// Cleaning robots: whether the battery is being recharged on the dock.
+export const BATTERY_CHARGING_STATE = {
+  CHARGING: 'BSH.Common.EnumType.BatteryChargingState.Charging',
+  DISCHARGING: 'BSH.Common.EnumType.BatteryChargingState.Discharging',
 };
 
 // Refrigeration compartments report their door with their OWN enum, distinct

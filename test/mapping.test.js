@@ -25,11 +25,13 @@ import {
 import { describeAppliance, formatDuration } from '../src/mapping/describe.js';
 import { SUPPORTED_LANGUAGES } from '../src/config.js';
 import {
+  BATTERY_CHARGING_STATE,
   EVENTS,
   EVENT_PRESENT_STATE,
   OPTIONS,
   POWER_STATE,
   SETTINGS,
+  STATUSES,
 } from '../src/homeconnect/constants.js';
 
 const config = normalizeConfig({ language: 'en' });
@@ -200,6 +202,50 @@ test('buildStates decodes settings, statuses and program options together', () =
   assert.equal(byFeature.get('active-program').text, 'Auto2');
   assert.equal(byFeature.get(PROGRAM_SWITCH_ID).state, 1);
   assert.equal(byFeature.get('connected').state, 1);
+});
+
+test('a cleaning robot gets its battery level and charging state (battery/charging)', () => {
+  const gladys = createFakeGladys();
+  const snapshot = {
+    haId: 'BOSCH-ROXXTER-1',
+    name: 'Roxxter',
+    brand: 'Bosch',
+    type: 'CleaningRobot',
+    connected: true,
+    settings: [],
+    statuses: [
+      { key: STATUSES.BATTERY_LEVEL, value: 80, unit: '%' },
+      { key: STATUSES.BATTERY_CHARGING_STATE, value: BATTERY_CHARGING_STATE.CHARGING },
+    ],
+    constraints: {},
+    activeProgram: null,
+    selectedProgram: null,
+  };
+  const models = buildFeatureModels(snapshot);
+  const device = buildDevice(gladys, snapshot, config, models);
+  const charging = device.features.find((feature) =>
+    feature.external_id.endsWith(':battery-charging'),
+  );
+  assert.equal(charging.category, 'battery');
+  assert.equal(charging.type, 'charging');
+  assert.equal(charging.read_only, true);
+  assert.equal(charging.min, 0);
+  assert.equal(charging.max, 1);
+
+  const byFeature = (statuses) =>
+    new Map(
+      buildStates(gladys, { ...snapshot, statuses }, models).map((state) => [
+        state.device_feature_external_id.split(':').pop(),
+        state.state,
+      ]),
+    );
+  const charged = byFeature(snapshot.statuses);
+  assert.equal(charged.get('battery'), 80);
+  assert.equal(charged.get('battery-charging'), 1);
+  const discharging = byFeature([
+    { key: STATUSES.BATTERY_CHARGING_STATE, value: BATTERY_CHARGING_STATE.DISCHARGING },
+  ]);
+  assert.equal(discharging.get('battery-charging'), 0);
 });
 
 test('buildStates leaves unreported values alone instead of publishing zero', () => {

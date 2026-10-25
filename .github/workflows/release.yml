@@ -11,6 +11,8 @@
 #      stay in lockstep);
 #   3. commits the bump and pushes the `vX.Y.Z` tag;
 #   4. calls build.yml to publish the multi-arch image (`:X.Y.Z` + `:latest`).
+#   5. once the image is published, runs the store admission checks on the tag,
+#      image included (pull requests run them with --skip-image-check).
 #
 # Why call build.yml instead of relying on the tag push: a tag pushed with the
 # default GITHUB_TOKEN does NOT trigger other workflows, so we invoke the build
@@ -122,6 +124,28 @@ jobs:
       packages: write
     with:
       version: ${{ needs.prepare.outputs.version }}
+
+  # Once the image is on ghcr.io, run the store indexer's admission checks on the
+  # released tag WITHOUT --skip-image-check: this is exactly what the store will
+  # index, image and cover included.
+  store:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout the released tag
+        uses: actions/checkout@v7
+        with:
+          ref: v${{ needs.prepare.outputs.version }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Validate like the store indexer (image included)
+        run: npx --yes github:GladysAssistant/integration-store .
 
   # Publish the GitHub Release of the new tag: Gladys links the version on the
   # Supervision page to the repository's releases.

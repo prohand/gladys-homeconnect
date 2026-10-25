@@ -194,7 +194,8 @@ npx github:GladysAssistant/integration-store .
 The manifest declares the catalog shelf the integration sits on:
 `categories: ["appliances"]` (Gladys 4.86+, 1 to 3 keys among `climate`,
 `lighting`, `energy`, `security`, `multimedia`, `appliances`, `environment`,
-`protocols`, `network`, `notifications`, `assistants`, `services`). Home Connect
+`protocols`, `network`, `notifications`, `assistants`, `services`, and since 5.3 `transport`,
+`vehicles`, `servers`, `leisure`). Home Connect
 drives ovens, dishwashers, washing machines, dryers, fridges, coffee machines and
 hoods — the lights and setpoints it exposes are internal to those appliances, not
 room lighting or home climate, so `appliances` alone is the honest placement.
@@ -204,12 +205,17 @@ coupling (a manifest test pins it too).
 
 The same coupling applies, one notch higher, to the three capability fields
 `widgets`, `scene_triggers` and `scene_actions`: they were added in **Gladys
-5.1.0**, so the manifest declares `gladys_version: ">=5.1.0"`. That is a real
+5.1.0**, so the manifest declared `gladys_version: ">=5.1.0"`. That is a real
 cost — an instance still on 4.x no longer sees the update in its catalog — and
 it is the only way to declare them: an older core validates manifests with a
 strict field allowlist and refuses to install one carrying a field it does not
 know, which would fail at install time with a cryptic error instead of a clean
 "requires Gladys ≥ 5.1" filter.
+
+Since **Gladys 5.3.0** the manifest also carries `keywords` (search-only terms: the brands
+Balay, Constructa, Profilo, Thermador, BSH, and the appliance kinds), a field older cores refuse,
+so the floor is now `gladys_version: ">=5.3.0"`. No `countries`: Home Connect appliances are sold
+worldwide.
 
 Replace `cover.png` (800×534 px, ≤ 150 KB) before publishing — the bundled one is
 the template's gradient placeholder.

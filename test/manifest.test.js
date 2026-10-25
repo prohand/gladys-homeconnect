@@ -83,6 +83,62 @@ test('declaring catalog categories requires Gladys >= 4.86.0', () => {
   );
 });
 
+// The catalog shelves the store indexes (integration-store, Gladys 5.3).
+const CATEGORIES = [
+  'climate',
+  'lighting',
+  'energy',
+  'security',
+  'multimedia',
+  'appliances',
+  'environment',
+  'protocols',
+  'network',
+  'notifications',
+  'assistants',
+  'services',
+  'transport',
+  'vehicles',
+  'servers',
+  'leisure',
+];
+
+test('the categories stay inside the vocabulary the store indexes', () => {
+  assert.equal(new Set(manifest.categories).size, manifest.categories.length);
+  for (const category of manifest.categories) {
+    assert.ok(CATEGORIES.includes(category), `unknown category "${category}"`);
+  }
+});
+
+test('keywords, countries and music require Gladys >= 5.3.0', () => {
+  // Same coupling rule again: the three search/catalog fields of 5.3 are
+  // unknown to older cores.
+  const [, major, minor] = manifest.gladys_version.match(/>=\s*(\d+)\.(\d+)\.\d+/).map(Number);
+  if (manifest.keywords || manifest.countries || manifest.music) {
+    assert.ok(
+      major > 5 || (major === 5 && minor >= 3),
+      `keywords/countries/music require gladys_version >= 5.3.0, got "${manifest.gladys_version}"`,
+    );
+  }
+  assert.equal(manifest.gladys_version, '>=5.3.0');
+});
+
+test('the search keywords follow the store rules', () => {
+  const { keywords } = manifest;
+  assert.ok(Array.isArray(keywords) && keywords.length >= 1 && keywords.length <= 10);
+  const normalized = keywords.map((keyword) => keyword.trim().toLowerCase());
+  assert.equal(new Set(normalized).size, keywords.length, 'keywords must be unique');
+  for (const keyword of keywords) {
+    assert.equal(typeof keyword, 'string');
+    const { length } = keyword.trim();
+    assert.ok(length >= 2 && length <= 30, `keyword "${keyword}": ${length} characters`);
+  }
+});
+
+test('Home Connect is available worldwide: no country restriction', () => {
+  assert.equal(manifest.countries, undefined);
+});
+
 test('every text of the manifest is written in English, French, German and Spanish', () => {
   const texts = multiLanguageTexts(manifest);
   assert.ok(texts.length > 50, 'the walk found the texts');
