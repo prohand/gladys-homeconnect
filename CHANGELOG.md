@@ -6,6 +6,21 @@ All notable changes to this integration are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Cleaning robots: a **Charging** feature (`battery` / `charging`, Gladys 5.3) next to the battery
+  level, read from `BSH.Common.Status.BatteryChargingState`. Click **Update** on the robot in the
+  Discover tab to add it to an existing device.
+- Store listing: search keywords (Balay, Constructa, Profilo, Thermador, BSH, dishwasher, washing
+  machine, oven, coffee machine, fridge).
+
+### Changed
+
+- Gladys 5.3.0 or later is now required.
+- `@gladysassistant/integration-sdk` 0.16.
+- Pull request CI runs the store checks with `--skip-image-check`; the Release workflow runs them
+  in full once the image is published.
+
 ## [2.4.3] - 2026-10-25
 
 - Maintenance release, no functional change.

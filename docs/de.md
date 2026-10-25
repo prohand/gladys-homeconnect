@@ -14,6 +14,8 @@ Weinkühlschränke, Kaffeevollautomaten, Reinigungsroboter und Küchenmaschinen.
 > diese Integration aus. Das ist eine Eigenschaft der Geräte, nicht der
 > Integration.
 
+Erfordert **Gladys 5.3.0** oder neuer.
+
 ## 1. Eine Home Connect-Entwickleranwendung anlegen
 
 Die Home Connect-API ist kostenlos, aber jede Gladys-Instanz braucht ihre
@@ -76,6 +78,7 @@ deshalb erhalten keine zwei Geräte dieselbe Liste. Typischerweise:
 | Garraumtemperatur                                   | Temperatur | Backöfen                       |
 | Beleuchtung, Ambientebeleuchtung, Helligkeit        | Licht      | Hauben, Backöfen, Kühlschränke |
 | Kindersicherung                                     | Sperre     | Geräte, die sie unterstützen   |
+| Akkustand, wird geladen                             | Akku       | Saugroboter                    |
 | Getränkezähler                                      | Zähler     | Kaffeevollautomaten            |
 | Warnungen (Salz knapp, Wassertank leer, Filter…)    | binär      | je nach Gerätefamilie          |
 | Verbunden                                           | binär      | alle                           |

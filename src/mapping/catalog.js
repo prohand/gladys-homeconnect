@@ -32,6 +32,7 @@ import {
   DEVICE_FEATURE_UNITS,
 } from '@gladysassistant/integration-sdk';
 import {
+  BATTERY_CHARGING_STATE,
   DOOR_STATE,
   EVENTS,
   EVENT_PRESENT_STATE,
@@ -473,6 +474,16 @@ export const STATUS_FEATURES = {
     min: 0,
     max: 100,
     decode: decodeInteger,
+  },
+  [STATUSES.BATTERY_CHARGING_STATE]: {
+    id: 'battery-charging',
+    name: { en: 'Charging', fr: 'En charge', de: 'Wird geladen', es: 'Cargando' },
+    // `battery`/`charging` (Gladys 5.3): the robot's own battery being
+    // recharged, next to its level. 1 = charging, anything else (discharging,
+    // an enum value we do not know yet) = not charging.
+    ...binarySensor(DEVICE_FEATURE_CATEGORIES.BATTERY),
+    type: DEVICE_FEATURE_TYPES.BATTERY.CHARGING,
+    decode: decodeEnumBinary(BATTERY_CHARGING_STATE.CHARGING),
   },
   [STATUSES.OVEN_CAVITY_TEMPERATURE]: {
     id: 'cavity-temperature',

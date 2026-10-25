@@ -8,8 +8,8 @@ A Gladys Assistant **external integration** (Node 22+, ESM, no build step, one r
 dependency: `@gladysassistant/integration-sdk`) that brings every appliance reporting to
 [Home Connect](https://www.home-connect.com/) into Gladys: Bosch, Siemens, Neff, Gaggenau, Balay,
 Constructa, Profilo, Thermador. It reads states, receives changes in real time through the Home
-Connect **event stream (SSE)**, and sends commands. Gladys 5.1+ adds widgets, scene triggers and
-scene actions. The user brings the Client ID / Secret of a Home Connect developer app and links
+Connect **event stream (SSE)**, and sends commands. Requires Gladys 5.3.0+ (manifest `keywords`);
+widgets, scene triggers and scene actions came with 5.1. The user brings the Client ID / Secret of a Home Connect developer app and links
 the account with OAuth2.
 
 ## Commands
@@ -57,8 +57,9 @@ src/widgets.js              WidgetBridge: dashboard widgets
   on errors. It stops on Gladys disconnection and restarts in `initialize()`.
 - **Home Connect quotas are strict**: polling is only a safety net (default 900 s), honoured by
   the registry on top of the 60 s Gladys tick. Devices carry `should_poll: true` with an allowed
-  `poll_frequency` (1 s–60 s in ms); Gladys reads the flag at creation only, so index.js also runs
-  its own one-minute loop over `gladys.devices` through the same `registry.poll()`.
+  `poll_frequency` (1 s–60 s in ms); Gladys reads the flag at creation only (5.3 sets it from
+  `poll_frequency`, older cores did not), so index.js also runs its own one-minute loop over
+  `gladys.devices` through the same `registry.poll()`.
 - **OAuth tokens live in the Gladys config**, outside `config_schema`, written with
   `gladys.setConfig()` (`persistTokens`). The OAuth `state` is also persisted, so a container
   restart during sign-in still validates the callback. Never log tokens or the client secret.
@@ -71,7 +72,9 @@ src/widgets.js              WidgetBridge: dashboard widgets
 ### Manifest
 
 `test/manifest.test.js` keeps `gladys-assistant-integration.json` in sync with `DEFAULT_CONFIG`,
-the bounds and the handlers (`gladys_version >=5.1.0`).
+the bounds and the handlers (`gladys_version >=5.3.0`, for `keywords`), the `keywords` shape
+(1–10 unique terms of 2–30 characters: the brands and appliance kinds not already in the name or
+description) and the absence of `countries` (Home Connect is sold worldwide).
 
 ## Testing
 

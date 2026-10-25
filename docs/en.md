@@ -13,6 +13,8 @@ cleaning robots and cook processors.
 > only to it. If your internet connection is down, this integration is down.
 > That is a property of the appliances, not of the integration.
 
+Requires **Gladys 5.3.0** or later.
+
 ## 1. Create a Home Connect developer application
 
 The Home Connect API is free, but each Gladys instance needs its **own**
@@ -68,6 +70,7 @@ appliances get the same list. Typically:
 | Cavity temperature                              | temperature | ovens                        |
 | Light, ambient light, brightness                | light       | hoods, ovens, fridges        |
 | Child lock                                      | lock        | appliances that support it   |
+| Battery level, charging                         | battery     | cleaning robots              |
 | Beverage counters                               | counter     | coffee machines              |
 | Alerts (salt low, water tank empty, filter…)    | binary      | per appliance family         |
 | Connected                                       | binary      | all                          |

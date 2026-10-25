@@ -183,9 +183,10 @@ export function buildDevice(gladys, snapshot, config, models = buildFeatureModel
     // seconds have passed. Sending the configured interval directly is what
     // Gladys rejects with `devices[0].poll_frequency: invalid poll frequency`.
     poll_frequency: GLADYS_POLL_TICK_MS,
-    // Gladys only schedules a device that also asks for it (`should_poll` is
-    // false by default in the core): without it this safety net never ran.
-    // The flag is read at creation only: index.js covers older devices.
+    // Before Gladys 5.3 the core only scheduled a device that also asked for it
+    // (`should_poll` false by default): without it this safety net never ran.
+    // 5.3 sets the flag itself from `poll_frequency`; it stays explicit here
+    // for the devices created by older cores, which index.js also covers.
     should_poll: true,
     // Free key/value pairs shown on the device page — the identity of the
     // physical appliance, useful when two identical ovens sit side by side.
