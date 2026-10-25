@@ -117,7 +117,8 @@ Möglichkeiten.
 - **Gerät** — ein einzelnes Gerät: Zustand, Programm, Tür, Restzeit,
   Fortschritt und die Tasten _Starten_ / _Pausieren_ / _Stoppen_. Die Tasten
   folgen dem Gerät: Ein ruhendes Gerät bietet _Starten_ an, ein laufendes
-  _Pausieren_ und _Stoppen_. Deaktiviere _Start-/Stopp-Tasten anzeigen_ für
+  _Pausieren_ und _Stoppen_. _Pausieren_ erscheint nur, wenn das Gerät diesen
+  Befehl annimmt: Die meisten Geschirrspüler tun das nicht. Deaktiviere _Start-/Stopp-Tasten anzeigen_ für
   eine reine Anzeigekarte.
 
 Restzeit und Fortschritt sind an die Funktionen des Geräts selbst gebunden: Sie

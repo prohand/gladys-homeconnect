@@ -115,7 +115,8 @@ panel y ampliar el editor de escenas. Home Connect usa las tres posibilidades.
 - **Electrodoméstico**: un único electrodoméstico: estado, programa, puerta,
   tiempo restante, progreso y los botones _Iniciar_ / _Pausar_ / _Detener_. Los
   botones siguen al electrodoméstico: uno inactivo ofrece _Iniciar_, uno en
-  marcha _Pausar_ y _Detener_. Desmarque _Mostrar los botones iniciar / detener_
+  marcha _Pausar_ y _Detener_. _Pausar_ solo aparece si el electrodoméstico
+  acepta esa orden: la mayoría de los lavavajillas no la aceptan. Desmarque _Mostrar los botones iniciar / detener_
   para una tarjeta de solo lectura.
 
 El tiempo restante y el progreso están vinculados a las funciones del propio

@@ -67,6 +67,29 @@ test('refresh reads the constraints of a setpoint exactly once', async () => {
   assert.equal(constraintCalls(), 1, 'constraints never change, so they are not read again');
 });
 
+test('the supported commands are read once, and again only after a failed read', async () => {
+  let failing = true;
+  let reads = 0;
+  const { registry } = await createRegistry({
+    async getCommands() {
+      reads += 1;
+      if (failing) {
+        throw new Error('Home Connect hiccup');
+      }
+      return [];
+    },
+  });
+  assert.equal(registry.appliances.get(FRIDGE.haId).snapshot.commands, null);
+
+  failing = false;
+  await registry.refresh();
+  assert.deepEqual(registry.appliances.get(FRIDGE.haId).snapshot.commands, []);
+  const afterRetry = reads;
+
+  await registry.refresh();
+  assert.equal(reads, afterRetry, 'a list already read is carried over');
+});
+
 test('a disconnected appliance is published as unreachable and degraded', async () => {
   const { gladys } = await createRegistry({
     async getAppliances() {

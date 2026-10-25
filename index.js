@@ -127,7 +127,14 @@ gladys.onScanRequest(async () => {
 // --- Command: the user acts on a controllable feature ------------------------
 gladys.onSetValue(async (device, feature, value) => {
   logger.info(`onSetValue <- ${feature.external_id} = ${value}`);
-  await registry.setValue(device, feature, value);
+  try {
+    await registry.setValue(device, feature, value);
+  } catch (err) {
+    // The SDK only hands the message to Gladys: logged here, it also reaches
+    // the logs a user posts when a start is refused ("Remote start…").
+    logger.warn(`onSetValue ${feature.external_id} failed: ${err.message}`);
+    throw err;
+  }
 });
 
 // --- Device lifecycle: the user adds a discovered appliance ------------------

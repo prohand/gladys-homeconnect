@@ -191,6 +191,16 @@ function buildHeadline(description, language) {
   return truncate(parts.filter(Boolean).join(' · '), 40);
 }
 
+/**
+ * Whether the appliance accepts a command (pause, resume). A list never read
+ * (`null`) says yes: Home Connect then answers itself, as it always did.
+ * @param {object} snapshot
+ * @param {string} commandKey
+ */
+export function supportsCommand(snapshot, commandKey) {
+  return !Array.isArray(snapshot?.commands) || snapshot.commands.includes(commandKey);
+}
+
 /** @param {string} text @param {number} max */
 export function truncate(text, max) {
   const value = String(text ?? '').trim();

@@ -106,6 +106,8 @@ extend the scene editor. Home Connect uses all three.
 - **Appliance** — a single appliance: state, program, door, remaining time,
   progress, and the _Start_ / _Pause_ / _Stop_ buttons. The buttons follow the
   appliance: an idle one is offered _Start_, a running one _Pause_ and _Stop_.
+  _Pause_ only shows when the appliance accepts that command: most dishwashers
+  do not.
   Untick _Show the buttons_ for a read-only card.
 
 Remaining time and progress are bound to the appliance's own features: they move

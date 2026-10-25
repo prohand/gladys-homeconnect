@@ -4,6 +4,7 @@
 // -----------------------------------------------------------------------------
 
 import {
+  COMMANDS,
   DOOR_STATE,
   OPERATION_STATE,
   OPTIONS,
@@ -110,6 +111,13 @@ export function createFakeApi(overrides = {}) {
     async getSelectedProgram(haId) {
       calls.push(['getSelectedProgram', haId]);
       return haId === DISHWASHER.haId ? copy(DISHWASHER_ACTIVE_PROGRAM) : null;
+    },
+    async getCommands(haId) {
+      calls.push(['getCommands', haId]);
+      return haId === DISHWASHER.haId ? [COMMANDS.PAUSE_PROGRAM, COMMANDS.RESUME_PROGRAM] : [];
+    },
+    async putCommand(haId, key) {
+      calls.push(['putCommand', haId, key]);
     },
     async setSetting(haId, key, value, unit) {
       calls.push(['setSetting', haId, key, value, unit]);

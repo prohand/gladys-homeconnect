@@ -101,3 +101,21 @@ test('an older unstored pair is never written over a newer one', async (t) => {
   assert.deepEqual(state.writes, ['rt1']);
   assert.equal(api.unpersistedTokens, null);
 });
+
+test('getCommands answers the keys of the commands the appliance lists', async (t) => {
+  const original = globalThis.fetch;
+  globalThis.fetch = async () =>
+    jsonResponse(200, {
+      data: { commands: [{ key: 'BSH.Common.Command.PauseProgram', name: 'Pause' }] },
+    });
+  t.after(() => {
+    globalThis.fetch = original;
+  });
+  const api = new HomeConnectApi({
+    getConfig: () => config,
+    getTokens: () => ({ access_token: 'at', refresh_token: 'rt', token_expires_at: Infinity }),
+    persistTokens: async () => {},
+  });
+
+  assert.deepEqual(await api.getCommands('HA1'), ['BSH.Common.Command.PauseProgram']);
+});

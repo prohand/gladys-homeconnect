@@ -30,7 +30,7 @@
 import { createLogger, WIDGET_COLORS } from '@gladysassistant/integration-sdk';
 import { OPTION_FEATURES, STATUS_FEATURES } from './mapping/catalog.js';
 import { COMMANDS, OPTIONS, STATUSES } from './homeconnect/constants.js';
-import { describeAppliance, truncate } from './mapping/describe.js';
+import { describeAppliance, supportsCommand, truncate } from './mapping/describe.js';
 import { hasCredentials } from './config.js';
 
 const logger = createLogger({ name: 'widgets' });
@@ -369,7 +369,7 @@ export class WidgetBridge {
     components.push({ type: 'status', items: this.statusItems(description, entry) });
 
     if (settings.controls !== false) {
-      components.push(...this.buttons(description));
+      components.push(...this.buttons(description, entry.snapshot));
     }
 
     return { ttl_seconds: TTL_SECONDS, components };
@@ -402,19 +402,27 @@ export class WidgetBridge {
   /**
    * Start / stop, or pause / resume while a program runs. Offering the two
    * halves at once would put a Start next to a running program — a button that
-   * exists only to be refused.
+   * exists only to be refused — which is also why pause / resume only show
+   * on an appliance that lists them among its commands (most dishwashers
+   * do not).
    */
-  buttons(description) {
+  buttons(description, snapshot) {
     if (!description.connected) {
       return [];
     }
     if (description.running) {
-      return [
-        description.state === 'Pause'
-          ? button(TEXTS.resume, 'primary', 'play', WIDGET_ACTIONS.RESUME)
-          : button(TEXTS.pause, 'secondary', 'pause', WIDGET_ACTIONS.PAUSE),
-        button(TEXTS.stop, 'danger', 'square', WIDGET_ACTIONS.STOP, true),
-      ];
+      const paused = description.state === 'Pause';
+      const command = paused ? COMMANDS.RESUME_PROGRAM : COMMANDS.PAUSE_PROGRAM;
+      const buttons = [];
+      if (supportsCommand(snapshot, command)) {
+        buttons.push(
+          paused
+            ? button(TEXTS.resume, 'primary', 'play', WIDGET_ACTIONS.RESUME)
+            : button(TEXTS.pause, 'secondary', 'pause', WIDGET_ACTIONS.PAUSE),
+        );
+      }
+      buttons.push(button(TEXTS.stop, 'danger', 'square', WIDGET_ACTIONS.STOP, true));
+      return buttons;
     }
     return [button(TEXTS.start, 'primary', 'play', WIDGET_ACTIONS.START, true)];
   }
@@ -444,6 +452,18 @@ export class WidgetBridge {
     }
 
     logger.info(`Widget action ${actionKey} on ${entry.haId}`);
+    try {
+      return await this.applyAction(actionKey, entry);
+    } catch (err) {
+      // The SDK hands the message to Gladys and logs nothing: without this
+      // line, the logs a user posts to ask for help say "action start" and
+      // stop there.
+      logger.warn(`Widget action ${actionKey} on ${entry.haId} failed: ${err.message}`);
+      throw err;
+    }
+  }
+
+  async applyAction(actionKey, entry) {
     switch (actionKey) {
       case WIDGET_ACTIONS.START:
         // Home Connect's own refusal ("Remote start is not enabled") reaches
@@ -454,10 +474,10 @@ export class WidgetBridge {
         await this.api.stopProgram(entry.haId);
         return TEXTS.stopped;
       case WIDGET_ACTIONS.PAUSE:
-        await this.api.putCommand(entry.haId, COMMANDS.PAUSE_PROGRAM);
+        await this.registry.sendCommand(entry.haId, COMMANDS.PAUSE_PROGRAM);
         return TEXTS.paused;
       case WIDGET_ACTIONS.RESUME:
-        await this.api.putCommand(entry.haId, COMMANDS.RESUME_PROGRAM);
+        await this.registry.sendCommand(entry.haId, COMMANDS.RESUME_PROGRAM);
         return TEXTS.resumed;
       default:
         throw new Error(`Unknown widget action: ${actionKey}`);

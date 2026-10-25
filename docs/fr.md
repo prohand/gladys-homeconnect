@@ -113,7 +113,8 @@ tableau de bord et enrichir l'éditeur de scènes. Home Connect utilise les troi
 - **Appareil** — un seul appareil : état, programme, porte, temps restant,
   progression, et les boutons _Démarrer_ / _Pause_ / _Arrêter_. Les boutons
   s'adaptent : un appareil à l'arrêt propose _Démarrer_, un appareil en marche
-  propose _Pause_ et _Arrêter_. Décochez _Afficher les boutons_ pour une carte
+  propose _Pause_ et _Arrêter_. _Pause_ n'apparaît que si l'appareil accepte
+  cette commande : la plupart des lave-vaisselle ne l'acceptent pas. Décochez _Afficher les boutons_ pour une carte
   en lecture seule.
 
 Le temps restant et la progression sont branchés directement sur les
