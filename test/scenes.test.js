@@ -149,6 +149,24 @@ test('pause and resume go through the Home Connect commands endpoint', async () 
   ]);
 });
 
+test('pause on an appliance that does not list it is refused before reaching Home Connect', async () => {
+  const commands = [];
+  const { gladys } = await createBridge({
+    async getCommands() {
+      return [];
+    },
+    async putCommand(haId, key) {
+      commands.push([haId, key]);
+    },
+  });
+
+  await assert.rejects(
+    () => invoke(gladys, `sceneAction:${SCENE_ACTIONS.PAUSE}`, { appliance: DISHWASHER_DEVICE }),
+    /does not accept PauseProgram/,
+  );
+  assert.deepEqual(commands, []);
+});
+
 test('an action on an unknown appliance fails with a message, and only that action', async () => {
   const { gladys } = await createBridge();
 

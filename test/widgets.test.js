@@ -170,6 +170,41 @@ test('a running appliance is offered pause and stop, an idle one start', async (
   assert.deepEqual(await buttonKeys(), ['start']);
 });
 
+test('pause is not offered to an appliance that does not list it (most dishwashers)', async () => {
+  const { gladys, api } = await createWidgets({ getCommands: async () => [] });
+
+  const content = await invoke(gladys, `widget:${WIDGETS.APPLIANCE}`, {
+    settings: { appliance: DISHWASHER_DEVICE },
+    language: 'en',
+    units: 'metric',
+  });
+
+  assertRenderable(content);
+  assert.deepEqual(
+    content.components
+      .filter((component) => component.type === 'button')
+      .map((component) => component.action.key),
+    ['stop'],
+  );
+
+  // A dashboard still showing the old button gets a readable refusal, without
+  // spending a Home Connect request on it.
+  await assert.rejects(
+    () =>
+      invoke(
+        gladys,
+        `widgetAction:${WIDGETS.APPLIANCE}`,
+        'pause',
+        {},
+        {
+          settings: { appliance: DISHWASHER_DEVICE },
+        },
+      ),
+    /does not accept PauseProgram/,
+  );
+  assert.equal(api.calls.filter(([method]) => method === 'putCommand').length, 0);
+});
+
 test('the controls can be turned off in the widget settings', async () => {
   const { gladys } = await createWidgets();
 

@@ -87,15 +87,13 @@ export class SceneBridge {
 
   /** Register the five scene actions. Call it BEFORE `connect()`. */
   register() {
-    this.gladys.onSceneAction(SCENE_ACTIONS.START, (fields) => this.startProgram(fields));
-    this.gladys.onSceneAction(SCENE_ACTIONS.STOP, (fields) => this.stopProgram(fields));
-    this.gladys.onSceneAction(SCENE_ACTIONS.PAUSE, (fields) =>
-      this.command(fields, COMMANDS.PAUSE_PROGRAM),
-    );
-    this.gladys.onSceneAction(SCENE_ACTIONS.RESUME, (fields) =>
-      this.command(fields, COMMANDS.RESUME_PROGRAM),
-    );
-    this.gladys.onSceneAction(SCENE_ACTIONS.STATUS, (fields) => this.readStatus(fields));
+    const on = (key, run) =>
+      this.gladys.onSceneAction(key, (fields) => logFailure(key, run(fields)));
+    on(SCENE_ACTIONS.START, (fields) => this.startProgram(fields));
+    on(SCENE_ACTIONS.STOP, (fields) => this.stopProgram(fields));
+    on(SCENE_ACTIONS.PAUSE, (fields) => this.command(fields, COMMANDS.PAUSE_PROGRAM));
+    on(SCENE_ACTIONS.RESUME, (fields) => this.command(fields, COMMANDS.RESUME_PROGRAM));
+    on(SCENE_ACTIONS.STATUS, (fields) => this.readStatus(fields));
   }
 
   // --- Triggers --------------------------------------------------------------
@@ -240,7 +238,7 @@ export class SceneBridge {
   async command(fields, commandKey) {
     const { haId } = this.resolveOnline(fields);
     logger.info(`Scene action: ${commandKey} on ${haId}`);
-    await this.api.putCommand(haId, commandKey);
+    await this.registry.sendCommand(haId, commandKey);
   }
 
   /**
@@ -267,5 +265,21 @@ export class SceneBridge {
       connected: description.connected,
       summary: `${description.name}${language === 'fr' ? ' : ' : ': '}${description.headline}`,
     };
+  }
+}
+
+/**
+ * The SDK hands a failed action's message to Gladys and logs nothing: without
+ * this line, the logs a user posts to ask for help show the action starting
+ * and never why it failed.
+ * @param {string} key
+ * @param {Promise<any>} running
+ */
+async function logFailure(key, running) {
+  try {
+    return await running;
+  } catch (err) {
+    logger.warn(`Scene action ${key} failed: ${err.message}`);
+    throw err;
   }
 }

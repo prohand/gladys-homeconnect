@@ -185,6 +185,17 @@ export class HomeConnectApi {
     return this.request('DELETE', `${API_PATH}/${encodeURIComponent(haId)}/programs/active`);
   }
 
+  /**
+   * The commands the appliance accepts (pause, resume…), as a list of keys.
+   * Pause and resume are not universal: most dishwashers refuse both, and the
+   * widget must not offer a button that exists only to be refused.
+   * @returns {Promise<string[]>}
+   */
+  async getCommands(haId) {
+    const data = await this.request('GET', `${API_PATH}/${encodeURIComponent(haId)}/commands`);
+    return (data?.commands ?? []).map((command) => command.key).filter(Boolean);
+  }
+
   /** Trigger a write-only command (pause / resume). */
   putCommand(haId, key) {
     return this.request(

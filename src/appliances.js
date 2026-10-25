@@ -19,8 +19,9 @@
 import { createLogger, DEVICE_TRANSPORTS } from '@gladysassistant/integration-sdk';
 import { RateLimitedError } from './homeconnect/api.js';
 import { ReauthorizationRequiredError } from './homeconnect/oauth.js';
-import { OPERATION_STATE, ROOT, SSE_TYPES, STATUSES } from './homeconnect/constants.js';
+import { OPERATION_STATE, ROOT, SSE_TYPES, STATUSES, shortName } from './homeconnect/constants.js';
 import { EVENT_FEATURES, SETTING_FEATURES, SYNTHETIC_FEATURES } from './mapping/catalog.js';
+import { supportsCommand } from './mapping/describe.js';
 import {
   DEVICE_TYPE,
   buildDevice,
@@ -174,7 +175,11 @@ export class ApplianceRegistry {
     this.lastPollAt.set(appliance.haId, Date.now());
     let snapshot;
     try {
-      snapshot = await this.fetchSnapshot(appliance, previous?.snapshot?.constraints);
+      snapshot = await this.fetchSnapshot(
+        appliance,
+        previous?.snapshot?.constraints,
+        previous?.snapshot?.commands,
+      );
     } catch (err) {
       this.restorePollClock(appliance.haId, previousPollAt);
       throw err;
@@ -210,8 +215,9 @@ export class ApplianceRegistry {
    *
    * @param {object} appliance
    * @param {Record<string, object>} [knownConstraints] constraints already read
+   * @param {string[]|null} [knownCommands] supported commands already read
    */
-  async fetchSnapshot(appliance, knownConstraints) {
+  async fetchSnapshot(appliance, knownConstraints, knownCommands) {
     const base = {
       haId: appliance.haId,
       name: appliance.name,
@@ -223,6 +229,9 @@ export class ApplianceRegistry {
       settings: [],
       statuses: [],
       constraints: knownConstraints ?? {},
+      // null = never read: everything stays offered, and Home Connect has the
+      // last word, as before this list existed.
+      commands: knownCommands ?? null,
       activeProgram: null,
       selectedProgram: null,
       // Events have no endpoint: the only place they exist is the stream, so
@@ -264,6 +273,16 @@ export class ApplianceRegistry {
       if (detail?.constraints) {
         base.constraints[key] = { ...detail.constraints, unit: detail.unit };
       }
+    }
+
+    // Like the constraints, what an appliance can do does not change: read
+    // once, carried over, and read again only if the first read failed.
+    if (!Array.isArray(base.commands)) {
+      base.commands = await this.readSafely(
+        () => this.api.getCommands(appliance.haId),
+        null,
+        `commands of ${appliance.haId}`,
+      );
     }
 
     base.activeProgram = await this.readSafely(
@@ -800,6 +819,24 @@ export class ApplianceRegistry {
     }
     // No optimistic echo: the appliance goes through DelayedStart/Aborting
     // before settling, and the event stream reports each step accurately.
+  }
+
+  /**
+   * Send a command (pause, resume) the widget and the scene actions share.
+   * One the appliance does not list is refused here, in words the user can act
+   * on, rather than with Home Connect's "Command: …PauseProgram not supported"
+   * after a request spent on the quota.
+   * @param {string} haId
+   * @param {string} commandKey
+   */
+  async sendCommand(haId, commandKey) {
+    const snapshot = this.appliances.get(haId)?.snapshot;
+    if (!supportsCommand(snapshot, commandKey)) {
+      throw new Error(
+        `${snapshot.name || haId} does not accept ${shortName(commandKey)} through Home Connect`,
+      );
+    }
+    await this.api.putCommand(haId, commandKey);
   }
 
   // --- Helpers ---------------------------------------------------------------
