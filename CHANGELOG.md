@@ -6,6 +6,8 @@ All notable changes to this integration are documented here. The format follows
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-10-25
+
 ### Added
 
 - Cleaning robots: a **Charging** feature (`battery` / `charging`, Gladys 5.3) next to the battery
@@ -153,7 +155,8 @@ First public release.
 - Fill in device values on the first connection
 - Fix door polarity, nameless features, empty alerts; default to French
 
-[Unreleased]: https://github.com/prohand/gladys-homeconnect/compare/v2.4.3...HEAD
+[Unreleased]: https://github.com/prohand/gladys-homeconnect/compare/v2.5.0...HEAD
+[2.5.0]: https://github.com/prohand/gladys-homeconnect/compare/v2.4.3...v2.5.0
 [2.4.3]: https://github.com/prohand/gladys-homeconnect/compare/v2.4.2...v2.4.3
 [2.4.2]: https://github.com/prohand/gladys-homeconnect/compare/v2.4.1...v2.4.2
 [2.4.1]: https://github.com/prohand/gladys-homeconnect/compare/v2.4.0...v2.4.1
