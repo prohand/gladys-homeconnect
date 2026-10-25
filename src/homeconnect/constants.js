@@ -103,6 +103,19 @@ export const OPTIONS = {
   DRYER_DRYING_TARGET: 'LaundryCare.Dryer.Option.DryingTarget',
 };
 
+// Options the appliance only reports (Home Connect documents them read-only).
+// A selected program lists them along with the real choices, but a start that
+// sends them back is refused, one option per refusal: never send them.
+export const REPORT_ONLY_OPTIONS = new Set([
+  OPTIONS.REMAINING_PROGRAM_TIME,
+  'BSH.Common.Option.RemainingProgramTimeIsEstimated',
+  'BSH.Common.Option.EstimatedTotalProgramTime',
+  OPTIONS.ELAPSED_PROGRAM_TIME,
+  OPTIONS.PROGRAM_PROGRESS,
+  OPTIONS.ENERGY_FORECAST,
+  OPTIONS.WATER_FORECAST,
+]);
+
 // --- Events (transient notifications pushed on the SSE stream) ---------------
 export const EVENTS = {
   PROGRAM_FINISHED: 'BSH.Common.Event.ProgramFinished',

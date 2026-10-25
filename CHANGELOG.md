@@ -6,6 +6,14 @@ All notable changes to this integration are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- Starting a program on a dishwasher that refuses several options ended on "Home Connect rate
+  limit reached": each refused option cost one start, and Home Connect allows 5 starts per minute.
+  The options the appliance only reports (energy and water forecasts, remaining time…) are no
+  longer sent, an option refused once is left out of the next starts, and one start stops before
+  the limit.
+
 ## [2.5.1] - 2026-10-25
 
 - Maintenance release, no functional change.
