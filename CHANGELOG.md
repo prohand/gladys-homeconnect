@@ -6,6 +6,8 @@ All notable changes to this integration are documented here. The format follows
 
 ## [Unreleased]
 
+## [2.5.4] - 2026-11-16
+
 - Update `@gladysassistant/integration-sdk` to 0.16.1 (security update).
 
 ## [2.5.3] - 2026-11-16
@@ -175,7 +177,8 @@ First public release.
 - Fill in device values on the first connection
 - Fix door polarity, nameless features, empty alerts; default to French
 
-[Unreleased]: https://github.com/prohand/gladys-homeconnect/compare/v2.5.3...HEAD
+[Unreleased]: https://github.com/prohand/gladys-homeconnect/compare/v2.5.4...HEAD
+[2.5.4]: https://github.com/prohand/gladys-homeconnect/compare/v2.5.3...v2.5.4
 [2.5.3]: https://github.com/prohand/gladys-homeconnect/compare/v2.5.2...v2.5.3
 [2.5.2]: https://github.com/prohand/gladys-homeconnect/compare/v2.5.1...v2.5.2
 [2.5.1]: https://github.com/prohand/gladys-homeconnect/compare/v2.5.0...v2.5.1
